@@ -209,8 +209,24 @@ export class Match{
   }
   switchPlayer(){
     if(this.state!=='playing'||this.phase!=='live'||(!this.loose&&this.possession===0))return;
-    const next=this.bestDefender();
-    if(next){this.selected=next.id;this.defensePlan=null;}
+    const focus=this.loose?{x:this.ball.tx,y:this.ball.ty,vx:0,vy:0}:this.ball?.kind==='pass'?this.players[this.ball.to]:this.carrier;
+    const allChoices=this.players.filter(p=>p.team===0&&p.down<=0&&p.dive<=0&&(!this.loose||this.canChase(p)));
+    if(!allChoices.length)return;
+    const cost=p=>{
+      if(this.loose)return distance(p,focus)/78;
+      const vx=focus.vx||0,vy=focus.vy||0;
+      let eta=Infinity;
+      for(let t=0;t<=1.6;t+=.2){const point={x:clamp(focus.x+vx*t,FIELD.left+8,FIELD.right-8),y:clamp(focus.y+vy*t,FIELD.top-22,FIELD.bottom+22)};const gap=Math.max(0,distance(p,point)-18);if(gap<=78*t){eta=t;break;}eta=t+Math.max(0,gap-78*t)/78;}
+      const behind=Math.hypot(vx,vy)>25&&((p.x-focus.x)*vx+(p.y-focus.y)*vy)<0;
+      return eta+(behind?.4:0)+(p.cd>0?.12:0);
+    };
+    const ranked=allChoices.map(p=>({p,c:cost(p)})).sort((a,b)=>a.c-b.c||a.p.id-b.p.id);
+    const best=ranked[0];
+    // If a better player exists (ignoring the old 0.08 hysteresis), switch to them.
+    if(best.p.id!==this.selected){this.selected=best.p.id;this.defensePlan=null;return;}
+    // Already on the best — cycle to the next if they are comparable (within 0.5s ETA).
+    const next=ranked.find(r=>r.p.id!==this.selected&&r.c<=best.c+.5);
+    if(next){this.selected=next.p.id;this.defensePlan=null;}
   }
   beginSpecial(input={x:0,y:0}){
     if(this.defenseGesture)return;
