@@ -56,15 +56,24 @@ Profili fissi e uguali per entrambe le squadre: 9 e 10 registi, 12 e 13 potenti,
 11, 14 e 15 agili. Il profilo compare accanto al ruolo del giocatore selezionato.
 I potenti hanno corporatura più robusta, una finestra di sfondamento più lunga
 e placcaggi più pronti; gli agili scattano e schivano più velocemente;
-i registi calciano il 12% più lontano, mantenendo la mira esatta mostrata a schermo.
+i registi calciano il 35% più lontano, mantenendo la mira esatta mostrata a schermo.
+Riserva di stamina: agili 120, registi 100, potenti 90. La lunghezza della barra
+rappresenta la capacità; il riempimento indica l’energia residua. I costi delle azioni
+restano in punti, quindi una riserva maggiore permette uno sforzo più lungo.
+Il Potente può provocare un pallone libero con un placcaggio manuale frontale
+ben centrato: almeno 35 punti alla partenza, costo totale 25 in caso di riuscita
+(12 per il tentativo normale), attesa di 6 secondi tra due successi.
+Entrambe le squadre possono recuperare automaticamente il pallone; nessun nuovo comando.
 Corsa normale, passaggi e tempi reali di caricamento restano uguali per tutti.
 
 ## Stato del progetto
 
 Ricezioni in corsa, ripartenze senza riallineare le squadre, offload, mischie arcade
 opzionali con difesa automatica, passaggi direzionati e difesa assistita.
-Energia individuale: corsa normale e passaggi gratuiti, consumo nelle azioni,
-recupero automatico più rapido da fermo. Nessuna ruck interattiva.
+Energia individuale: la corsa continua consuma gradualmente energia dopo due secondi;
+lo scatto prolungato costa di più. Placcaggi, calci, schivate e sfondamenti
+mantengono i propri costi. Recupero automatico nelle pause, più rapido da fermo.
+La velocità della corsa normale resta invariata e i passaggi restano gratuiti. Nessuna ruck interattiva.
 
 Questa copia contiene il nostro gioco; non contiene i file del gioco commerciale
 Retro Rugby (lo ZIP ricevuto conteneva soltanto una cartella vuota).

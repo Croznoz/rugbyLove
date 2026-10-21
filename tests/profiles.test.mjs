@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Match,PROFILES,distance} from '../dist/engine.mjs';
+import {Match,PROFILES,distance,FIELD} from '../dist/engine.mjs';
 function setup(profile){const m=new Match();m.reset();m.phase='live';m.guard=999;m.passCooldown=0;m.carrier.profile=profile;for(const p of m.players)if(p.id!==m.carrierId)p.down=10;return m;}
 function run(profile,sprint=false){const m=setup(profile),start={x:m.carrier.x,y:m.carrier.y};for(let i=0;i<60;i++)m.step(1/120,{x:0,y:-1,sprint});return distance(start,m.carrier);}
 test('profiles are role-based, symmetric between teams and restored on reset',()=>{
@@ -25,4 +25,23 @@ test('powerful charge and tackle last longer; agile dodge travels farther; playm
  const dodge=profile=>{const m=setup(profile),start={x:m.carrier.x,y:m.carrier.y};m.special({x:1,y:0});for(let i=0;i<12;i++)m.step(1/120,{x:1,y:0});return distance(start,m.carrier);};assert.ok(dodge(PROFILES.agile)>dodge(PROFILES.powerful));
  const dive=profile=>{const m=setup(profile);m.lineup(1);m.controlled.profile=profile;m.special();return m.controlled.dive;};assert.ok(dive(PROFILES.powerful)>dive(PROFILES.agile));
  const reach=profile=>{const m=setup(profile),t=m.kickTarget({x:0,y:-1},1);return distance(m.carrier,{x:t.tx,y:t.ty});};assert.ok(reach(PROFILES.playmaker)>reach(PROFILES.agile)*1.1);
+});
+test('profile capacity changes real sprint endurance and recovery stops at each capacity',()=>{
+ const duration=profile=>{const m=setup(profile),p=m.carrier;p.energy=profile.stamina;let frames=0;while(!p.exhausted&&frames<1200){m.step(1/120,{x:Math.sin(frames/90),y:Math.cos(frames/90),sprint:true});frames++;}assert.ok(p.exhausted);return frames/120;};
+ assert.ok(duration(PROFILES.agile)>duration(PROFILES.playmaker));assert.ok(duration(PROFILES.playmaker)>duration(PROFILES.powerful));
+ const m=new Match();m.reset();for(const p of m.players){assert.equal(p.energy,p.profile.stamina);m.spendEnergy(p,200);assert.equal(p.energy,0);}
+ for(let i=0;i<1440;i++)m.recoverEnergy(1/120,{});
+ for(const p of m.players)assert.equal(p.energy,p.profile.stamina);
+});
+
+test('playmaker kick has 35 percent more range at every charge level and respects field limits',()=>{
+ for(const dir of [-1,1])for(const power of [.25,.5,1]){
+  const normal=setup(PROFILES.agile),regista=setup(PROFILES.playmaker);
+  normal.attackDir=regista.attackDir=dir;
+  const a=normal.kickTarget({x:0,y:dir},power),b=regista.kickTarget({x:0,y:dir},power);
+  assert.ok(Math.abs(distance(regista.carrier,{x:b.tx,y:b.ty})/distance(normal.carrier,{x:a.tx,y:a.ty})-1.35)<.0001);
+  regista.carrier.y=dir<0?120:980;regista.beginKick({x:0,y:dir});regista.updateKickAim(3,{x:0,y:dir});
+  const preview=regista.kickTarget(regista.kickAim,regista.kickAim.power);regista.releaseKick();
+  assert.equal(regista.ball.ty,preview.ty);assert.ok(regista.ball.ty>=FIELD.top-12&&regista.ball.ty<=FIELD.bottom+12);
+ }
 });

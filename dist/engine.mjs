@@ -3,9 +3,9 @@ export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 // Fixed role profiles: appearance and action bonuses never alter normal running or passing.
 export const PROFILES=Object.freeze({
-  powerful:Object.freeze({label:'POTENTE',width:1.15,height:1.08,sprint:1.28,agility:.95,charge:1.12,tackle:1.1,kick:1}),
-  agile:Object.freeze({label:'AGILE',width:1,height:1,sprint:1.43,agility:1.1,charge:.9,tackle:1,kick:1}),
-  playmaker:Object.freeze({label:'REGISTA',width:1.05,height:1.04,sprint:1.35,agility:1,charge:1,tackle:1,kick:1.12})
+  powerful:Object.freeze({label:'POTENTE',stamina:90,width:1.15,height:1.08,sprint:1.28,agility:.95,charge:1.12,tackle:1.1,kick:1}),
+  agile:Object.freeze({label:'AGILE',stamina:120,width:1,height:1,sprint:1.43,agility:1.1,charge:.9,tackle:1,kick:1}),
+  playmaker:Object.freeze({label:'REGISTA',stamina:100,width:1.05,height:1.04,sprint:1.35,agility:1,charge:1,tackle:1,kick:1.35})
 });
 const ROLE_PROFILES=['playmaker','playmaker','powerful','powerful','agile','agile','agile'];
 const NUMBERS=[9,10,12,13,11,14,15];
@@ -16,21 +16,26 @@ export class Match{
     this.score=[0,0];this.half=1;this.time=seconds;this.elapsed=0;this.attackDir=-1;this.possession=0;this.tackles=0;this.state='playing';this.phase='kickoff';this.phaseTime=2.1;this.events=[];this.ball=null;this.particles=[];this.cpuThink=0;this.passCooldown=0;this.guard=1;this.selected=0;
     this.passSelection=null;this.kickAim=null;this.attackPlan=null;this.defensePlan=null;this.conversion=null;this.contact=null;this.cpuOffloadAt=-10;this.defenseGesture=null;this.aim={x:0,y:0};
     this.stats={tries:[0,0],conversions:[0,0],conversionAttempts:[0,0],passes:[0,0],offloads:[0,0],scrums:[0,0],tackles:[0,0],breaks:[0,0],kicks:[0,0],possession:[0,0]};
-    this.players=Array.from({length:14},(_,id)=>({id,team:id<7?0:1,slot:id%7,number:NUMBERS[id%7],profile:PROFILES[ROLE_PROFILES[id%7]],x:0,y:0,px:0,py:0,vx:0,vy:0,down:0,energy:100,energyWait:0,exhausted:false,burst:0,cd:0,charge:0,chargeX:0,chargeY:0,dive:0,diveX:0,diveY:0,kickAnim:0,kickCd:0,brace:false,evade:0,tackleWind:0,tackleX:0,tackleY:0,anim:0,facing:0}));
+    this.players=Array.from({length:14},(_,id)=>({id,team:id<7?0:1,slot:id%7,number:NUMBERS[id%7],profile:PROFILES[ROLE_PROFILES[id%7]],x:0,y:0,px:0,py:0,vx:0,vy:0,down:0,energy:PROFILES[ROLE_PROFILES[id%7]].stamina,energyWait:0,runLoad:0,moveSpeed:0,exhausted:false,burst:0,cd:0,charge:0,chargeX:0,chargeY:0,dive:0,diveX:0,diveY:0,kickAnim:0,kickCd:0,dominantReadyAt:0,dominantAttempt:false,brace:false,evade:0,tackleWind:0,tackleX:0,tackleY:0,anim:0,facing:0}));
     this.lineup(0);this.emit('kickoff','SI GIOCA.','CALCIO D’INIZIO');
   }
   spendEnergy(p,amount){
-    p.energy=clamp(p.energy-amount,0,100);p.energyWait=.65;
+    p.energy=clamp(p.energy-amount,0,p.profile.stamina);p.energyWait=.65;
     if(p.energy<=1)p.exhausted=true;
   }
   recoverEnergy(dt,input){
     for(const p of this.players){
       p.energyWait=Math.max(0,p.energyWait-dt);
       if(p.exhausted&&p.energy>=25)p.exhausted=false;
-      const sprint=this.phase==='live'&&p.id===this.selected&&(this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&Math.hypot(input.x||0,input.y||0)>.1;
-      if(!sprint&&p.energyWait===0&&p.charge<=0&&p.dive<=0&&p.burst<=0){
-        const resting=this.phase!=='live'||Math.hypot(p.vx,p.vy)<8;
-        p.energy=clamp(p.energy+dt*(resting?17:9),0,100);
+      const live=this.phase==='live'&&p.down<=0;
+      const moving=live&&p.moveSpeed>8,running=live&&p.moveSpeed>30;
+      // Sustained effort belongs to each runner, including AI; brief stops do not erase it.
+      p.runLoad=clamp(p.runLoad+dt*(running?1:moving?-.5:-2),0,12);
+      const sprint=live&&p.id===this.selected&&(this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&Math.hypot(input.x||0,input.y||0)>.1;
+      if(running&&!sprint&&p.runLoad>2){
+        this.spendEnergy(p,dt*(.8+2.2*clamp((p.runLoad-2)/8,0,1)));
+      }else if(!running&&!sprint&&p.energyWait===0&&p.charge<=0&&p.dive<=0&&p.burst<=0&&p.evade<=0&&p.kickAnim<=0){
+        p.energy=clamp(p.energy+dt*(moving?4:12),0,p.profile.stamina);
       }
     }
   }
@@ -38,11 +43,11 @@ export class Match{
   dir(team){return team===0?this.attackDir:-this.attackDir;}
   get carrier(){return this.players[this.carrierId];}
   get controlled(){return this.players[this.selected];}
-  get loose(){return this.ball?.kind==='kick';}
+  get loose(){return this.ball?.kind==='kick'||this.ball?.kind==='fumble';}
   lineup(team,x=FIELD.width/2,y=FIELD.height/2){
     this.passSelection=null;this.kickAim=null;this.attackPlan=null;this.defensePlan=null;this.scrum=null;this.contact=null;this.defenseGesture=null;this.possession=team;this.carrierId=team*7;const d=this.dir(team);this.ball=null;this.passCooldown=.7;this.guard=1.15;
     const xs=[.5,.25,.75,62/480,418/480,170/480,310/480].map(x=>x*FIELD.width);
-    for(const p of this.players){const own=p.team===team;p.x=xs[p.slot];p.y=clamp(y+1.25*(own?(-d*(45+Math.floor(p.slot/2)*22)):(d*(72+Math.floor(p.slot/2)*32))),FIELD.top+24,FIELD.bottom-24);if(own&&p.slot===0){p.x=x;p.y=y;}p.px=p.x;p.py=p.y;p.vx=p.vy=0;p.down=0;p.supportUntil=0;p.burst=0;p.charge=0;p.dive=0;p.kickAnim=0;p.brace=false;p.evade=0;p.tackleWind=0;p.facing=this.dir(p.team);}
+    for(const p of this.players){const own=p.team===team;p.x=xs[p.slot];p.y=clamp(y+1.25*(own?(-d*(45+Math.floor(p.slot/2)*22)):(d*(72+Math.floor(p.slot/2)*32))),FIELD.top+24,FIELD.bottom-24);if(own&&p.slot===0){p.x=x;p.y=y;}p.px=p.x;p.py=p.y;p.vx=p.vy=0;p.moveSpeed=0;p.down=0;p.supportUntil=0;p.burst=0;p.charge=0;p.dive=0;p.kickAnim=0;p.dominantAttempt=false;p.brace=false;p.evade=0;p.tackleWind=0;p.facing=this.dir(p.team);}
     this.selected=team===0?this.carrierId:this.nearest(0,this.carrier).id;
   }
   launchKickoff(){
@@ -166,7 +171,7 @@ export class Match{
     const c=this.carrier;c.charge=0;this.ball={kind:'pass',x:c.x,y:c.y,sx:c.x,sy:c.y,tx:to.x,ty:to.y,to:to.id,from:c.id,t:0,duration:clamp(distance(c,to)/430,.2,.52),team:c.team};for(const p of this.players)p.tackleWind=0;this.ball.runX=to.vx;this.ball.runY=Math.abs(to.vy)>8?to.vy:this.dir(c.team)*65;this.passCooldown=.18;this.emit('pass');return true;
   }
   canChase(p,b=this.ball){
-    return p.team!==b.team||b.eligible.includes(p.id)||(p.y-this.players[b.from].y)*this.dir(b.team)<=0;
+    return b.kind==='fumble'||p.team!==b.team||b.eligible.includes(p.id)||(p.y-this.players[b.from].y)*this.dir(b.team)<=0;
   }
   canKick(){return this.state==='playing'&&this.phase==='live'&&!this.ball&&this.possession===0&&this.carrier.down<=0&&this.carrier.kickCd<=0&&this.carrier.energy>=12;}
   beginKick(aim={x:0,y:0}){
@@ -276,7 +281,7 @@ export class Match{
       if(Math.hypot(dx,dy)<.15){dx=p.vx;dy=p.vy;if(Math.hypot(dx,dy)<6){dx=0;dy=this.dir(p.team);}}
       const len=Math.hypot(dx,dy)||1;p.chargeX=dx/len;p.chargeY=dy/len;p.charge=(.28+.20*clamp((p.energy-30)/30,0,1))*p.profile.charge;p.burst=.4;this.spendEnergy(p,30);p.cd=1.25;this.emit('charge');
     }else{
-      if(p.energy<12){this.emit('hint','RIPRENDI FIATO','IL PLACCAGGIO A CONTATTO RESTA ATTIVO');return;}this.spendEnergy(p,12);p.cd=.9;const c=this.carrier,len=distance(p,c)||1;
+      if(p.energy<12){this.emit('hint','RIPRENDI FIATO','IL PLACCAGGIO A CONTATTO RESTA ATTIVO');return;}p.dominantAttempt=p.profile===PROFILES.powerful&&p.energy>=35&&this.elapsed>=p.dominantReadyAt;this.spendEnergy(p,12);p.cd=.9;const c=this.carrier,len=distance(p,c)||1;
       p.diveX=(c.x-p.x)/len;p.diveY=(c.y-p.y)/len;p.dive=.22*p.profile.tackle;this.emit('dive');
     }
   }
@@ -295,6 +300,13 @@ export class Match{
       defender.x=clamp(defender.x+c.chargeX*10,FIELD.left+8,FIELD.right-8);defender.y=clamp(defender.y+c.chargeY*10,FIELD.top-22,FIELD.bottom+22);
       this.guard=.12;this.stats.breaks[c.team]++;this.scatter(c.x,c.y,'#f4c36c',16);this.emit('break','SFONDAMENTO!','PLACCAGGIO ROTTO');return;
     }
+    const dominant=manual&&!finalize&&defender.dive>0&&defender.dominantAttempt&&
+      defender.profile===PROFILES.powerful&&this.elapsed>=defender.dominantReadyAt&&defender.energy>=13&&d<23;
+    defender.dominantAttempt=false;
+    const speed=Math.hypot(c.vx,c.vy),fx=speed>8?c.vx/speed:0,fy=speed>8?c.vy/speed:this.dir(c.team);
+    const headOn=((defender.x-c.x)*fx+(defender.y-c.y)*fy)/d;
+    const aligned=((c.x-defender.x)*defender.diveX+(c.y-defender.y)*defender.diveY)/d;
+    if(dominant&&headOn>.8&&aligned>.9){this.dominantTackle(defender);return;}
     if(!finalize&&this.target({x:0,y:0})){
       this.contact={defender:defender.id,manual,remaining:.34,duration:.34};this.phase='contact';
       c.vx=c.vy=0;c.charge=c.burst=0;defender.dive=0;defender.vx=defender.vy=0;
@@ -308,12 +320,25 @@ export class Match{
     if(this.tackles>=3){this.restart.team=1-c.team;this.tackles=0;this.emit('turnover','CAMBIO POSSESSO',this.restart.team===0?'PALLA ALL’ITALIA':'PALLA ALL’IRLANDA');}
     this.phase='ruck';this.phaseTime=.42;this.restart.receiver=this.nearest(this.restart.team,this.restart,c.id).id;
   }
+  dominantTackle(defender){
+    const c=this.carrier,sx=c.x,sy=c.y,dx=defender.diveX,dy=defender.diveY;
+    this.spendEnergy(defender,13);defender.dominantReadyAt=this.elapsed+6;
+    c.x=clamp(c.x+dx*10,FIELD.left+8,FIELD.right-8);c.y=clamp(c.y+dy*10,FIELD.top-22,FIELD.bottom+22);
+    c.down=.85;c.charge=c.burst=c.evade=0;c.vx=c.vy=c.moveSpeed=0;
+    defender.down=.55;defender.dive=0;defender.vx=defender.vy=defender.moveSpeed=0;
+    this.contact=null;this.defenseGesture=null;this.passSelection=null;this.attackPlan=this.defensePlan=null;
+    this.stats.tackles[defender.team]++;this.tackles++;this.guard=0;this.passCooldown=0;
+    this.ball={kind:'fumble',x:sx,y:sy,sx,sy,tx:clamp(sx+dx*34,FIELD.left+12,FIELD.right-12),
+      ty:clamp(sy+dy*34,FIELD.top-12,FIELD.bottom+12),from:c.id,team:c.team,t:0,duration:.32,groundTime:0};
+    this.selected=this.bestDefender()?.id??defender.id;
+    this.scatter(sx,sy,'#f4c36c',16);this.emit('tackle','PLACCAGGIO DOMINANTE!','PALLONE LIBERO · RECUPERA');
+  }
   // Recover at the tackle without resetting either team's formation.
   stepRecovery(dt){
     const r=this.restart,receiver=this.players[r.receiver];
     for(const p of this.players){
       p.px=p.x;p.py=p.y;p.down=Math.max(0,p.down-dt);p.cd=Math.max(0,p.cd-dt);
-      if(p.down>0){p.vx=p.vy=0;continue;}
+      if(p.down>0){p.vx=p.vy=0;p.moveSpeed=0;continue;}
       let target;
       if(p===receiver)target=r;
       else if(p.team===r.team)target=this.supportPoint(p,receiver);
@@ -321,7 +346,7 @@ export class Match{
       const d=distance(p,target),speed=Math.min(p===receiver?150:65,d/Math.max(dt,.001));
       p.vx=d>1?(target.x-p.x)/d*speed:0;p.vy=d>1?(target.y-p.y)/d*speed:0;
       p.x=clamp(p.x+p.vx*dt,FIELD.left+8,FIELD.right-8);p.y=clamp(p.y+p.vy*dt,FIELD.top-22,FIELD.bottom+22);
-      p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;
+      p.moveSpeed=dt>0?Math.hypot(p.x-p.px,p.y-p.py)/dt:0;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;
     }
     this.phaseTime-=dt;
     if(this.phaseTime<=0&&distance(receiver,r)<12){
@@ -351,7 +376,7 @@ export class Match{
       const tx=clamp(s.x+(pack?(p.slot-1)*17:([0,0,0,-85,85,-140,140][p.slot])),FIELD.left+8,FIELD.right-8);
       const ty=clamp(s.y-d*(pack?13:65+(p.slot-3)*12)+displacement*this.dir(0),FIELD.top+10,FIELD.bottom-10);
       const blend=1-Math.exp(-dt*9);p.x+=(tx-p.x)*blend;p.y+=(ty-p.y)*blend;
-      p.vx=(p.x-p.px)/dt;p.vy=(p.y-p.py)/dt;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;
+      p.vx=(p.x-p.px)/dt;p.vy=(p.y-p.py)/dt;p.moveSpeed=dt>0?Math.hypot(p.x-p.px,p.y-p.py)/dt:0;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;
       p.facing=d;if(pack&&p.team===0&&s.pushing)this.spendEnergy(p,dt*12);
     }
     if(s.elapsed>=s.duration){
@@ -485,14 +510,14 @@ export class Match{
     const landing=this.loose?{x:this.ball.tx,y:this.ball.ty}:null;
     const chasers=landing?[0,1].map(team=>this.players.filter(p=>p.team===team&&p.down<=0&&this.canChase(p)).sort((a,b)=>distance(a,landing)-distance(b,landing))):null;
     for(const p of this.players){p.px=p.x;p.py=p.y;p.cd=Math.max(0,p.cd-dt);p.down=Math.max(0,p.down-dt);p.burst=Math.max(0,p.burst-dt);p.charge=Math.max(0,p.charge-dt);p.kickAnim=Math.max(0,p.kickAnim-dt);p.kickCd=Math.max(0,p.kickCd-dt);p.evade=Math.max(0,p.evade-dt);
-      const wasDiving=p.dive>0;p.dive=Math.max(0,p.dive-dt);if(wasDiving&&p.dive===0){p.down=.25;this.emit('miss');}
-      if(p.down>0){p.vx=p.vy=0;continue;}
+      const wasDiving=p.dive>0;p.dive=Math.max(0,p.dive-dt);if(wasDiving&&p.dive===0){p.dominantAttempt=false;p.down=.25;this.emit('miss');}
+      if(p.down>0){p.vx=p.vy=0;p.moveSpeed=0;continue;}
       let dx=0,dy=0,speed=p.team===0?(p.id===this.selected?78:65):this.aiSpeed;
       if(p.dive>0){dx=p.diveX;dy=p.diveY;speed=210;
       }else if(p.evade>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;speed=150*p.profile.agility;
       }else if(this.ball?.kind==='pass'&&p.id===this.ball.to){
         dx=this.ball.runX;dy=this.ball.runY;const run=Math.hypot(dx,dy)||1;dx/=run;dy/=run;speed=78;
-      }else if(p.id===this.selected){dx=input.x||0;dy=input.y||0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*24);}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
+      }else if(p.id===this.selected){dx=input.x||0;dy=input.y||0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*24*(1+.25*clamp(p.runLoad/8,0,1)));}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
       }else if(p.id===this.carrierId&&!this.ball){
         const dir=this.dir(p.team);let repel=0;
         for(const d of defenders){const ahead=(d.y-p.y)*dir;if(ahead>-15&&ahead<110)repel+=(p.x>=d.x?1:-1)*Math.max(0,75-Math.abs(p.x-d.x))*.025;}
@@ -521,7 +546,7 @@ export class Match{
       if(p.tackleWind>0&&p.dive<=0)speed*=.45;
       const norm=Math.hypot(dx,dy);if(norm>1){dx/=norm;dy/=norm;}
       const blend=p.dive>0?1:1-Math.exp(-dt*18);p.vx+=(dx*speed-p.vx)*blend;p.vy+=(dy*speed-p.vy)*blend;
-      p.x=clamp(p.x+p.vx*dt,FIELD.left+8,FIELD.right-8);p.y=clamp(p.y+p.vy*dt,FIELD.top-22,FIELD.bottom+22);p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;if(Math.abs(p.vy)>3)p.facing=Math.sign(p.vy);
+      p.x=clamp(p.x+p.vx*dt,FIELD.left+8,FIELD.right-8);p.y=clamp(p.y+p.vy*dt,FIELD.top-22,FIELD.bottom+22);p.moveSpeed=dt>0?Math.hypot(p.x-p.px,p.y-p.py)/dt:0;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;if(Math.abs(p.vy)>3)p.facing=Math.sign(p.vy);
     }
     // Soft separation keeps support runners readable without a physics engine.
     for(let i=0;i<14;i++)for(let j=i+1;j<14;j++){const a=this.players[i],b=this.players[j];if(a.team!==b.team||a.down||b.down)continue;const d=distance(a,b);if(d<16&&d>.01){const n=(16-d)*.5,dx=(a.x-b.x)/d*n,dy=(a.y-b.y)/d*n;a.x=clamp(a.x+dx,FIELD.left+8,FIELD.right-8);b.x=clamp(b.x-dx,FIELD.left+8,FIELD.right-8);a.y=clamp(a.y+dy,FIELD.top-22,FIELD.bottom+22);b.y=clamp(b.y-dy,FIELD.top-22,FIELD.bottom+22);}}

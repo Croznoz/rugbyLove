@@ -89,3 +89,22 @@ test('selected player label follows role profiles when switching players',()=>{
   active.carrierId=id;active.selected=id;frame(7);assert.ok(el('playerName').textContent.endsWith(' · '+label));
  }
 });
+test('stamina bar length reflects profile capacity and fill reflects remaining fraction',()=>{
+ start();
+ for(const id of [0,2,4]){
+  active.carrierId=id;active.selected=id;const p=active.controlled;p.energy=p.profile.stamina/2;p.energyWait=10;frame(7);
+  assert.equal(el('staminaTrack').style.width,(55*p.profile.stamina/100)+'px');
+  assert.equal(el('stamina').style.transform,'scaleX(0.5)');
+  assert.ok(el('energyLabel').textContent.endsWith((p.profile.stamina/2)+'/'+p.profile.stamina));
+ }
+});
+test('touch and keyboard tackles can trigger the powerful profile loose-ball action',()=>{
+ for(const control of ['touch','keyboard']){
+  start();active.lineup(1);active.guard=0;active.cpuThink=99;
+  for(const p of active.players)p.down=20;
+  const c=active.carrier,d=active.players[2];Object.assign(c,{x:300,y:550,vx:0,vy:80,down:0});Object.assign(d,{x:300,y:584,down:0});active.selected=d.id;
+  if(control==='touch'){dispatch('actionB','pointerdown',{pointerId:91});dispatch('actionB','pointerup',{pointerId:91});}
+  else{dispatch(windowEvents,'keydown',{code:'KeyK',repeat:false});dispatch(windowEvents,'keyup',{code:'KeyK'});}
+  frame(8);assert.equal(active.ball?.kind,'fumble',control);assert.equal(el('phase').textContent,'PALLONE LIBERO');assert.equal(active.stats.tackles[0],1);
+ }
+});

@@ -53,10 +53,10 @@ function updateHud(){
   }
   $('actionA').disabled=paused||(match.phase==='contact'&&match.possession!==0);$('actionB').disabled=match.phase==='contact';$('labelC').textContent=match.kickAim?'RILASCIA':'CALCIA';$('actionC').setAttribute('aria-label','Tieni premuto, mira col joystick e rilascia per calciare');
   $('possession').textContent=match.loose?'◌ PALLA CONTESA':match.possession===0?'● PALLA AGLI AZZURRI':'● PALLA ALL’IRLANDA';
-  $('phase').textContent=match.state==='menu'?'7 vs 7 · PARTITA RAPIDA':match.loose?'INSEGUI IL CALCIO':match.phase==='contact'?'PASSA ORA · OFFLOAD':match.phase==='ruck'?'RIPARTENZA':match.tackles+' / 3 PLACCAGGI';
+  $('phase').textContent=match.state==='menu'?'7 vs 7 · PARTITA RAPIDA':match.loose?(match.ball.kind==='fumble'?'PALLONE LIBERO':'INSEGUI IL CALCIO'):match.phase==='contact'?'PASSA ORA · OFFLOAD':match.phase==='ruck'?'RIPARTENZA':match.tackles+' / 3 PLACCAGGI';
   $('labelA').textContent=match.phase==='contact'&&match.possession===0?'OFFLOAD':match.possession===0&&!match.loose?'PASSA':'CAMBIA';$('labelB').textContent=match.loose?'SCATTO':match.possession===0?(Math.abs(directionInput().x)>.55&&Math.abs(directionInput().x)>Math.abs(directionInput().y)*1.25?'SCHIVA':'SFONDA'):match.controlled.brace?'CONTIENI':'PLACCA';
   $('direction').textContent='ATTACCA '+(match.attackDir<0?'↑':'↓');$('playerNumber').textContent=String(match.controlled.number).padStart(2,'0');$('playerName').textContent=roles[match.controlled.slot]+' · '+match.controlled.profile.label;
-  $('stamina').style.transform='scaleX('+(match.controlled.energy/100)+')';
+  $('stamina').style.transform='scaleX('+(Math.min(1,match.controlled.energy/match.controlled.profile.stamina))+')';
   $('controlHint').textContent=match.loose?'INSEGUI E RECUPERA.':match.possession===0?(match.phase==='contact'?'A ORA: LIBERA LA PALLA':'INDICA IL COMPAGNO · PREMI PASSA'):'TOCCA: PLACCA · TIENI: CONTIENI';
   $('actionA').setAttribute('aria-label',match.possession===0&&!match.loose?'Passa al compagno evidenziato':'Seleziona il difensore meglio posizionato');
   $('actionB').setAttribute('aria-label',match.loose?'Scatto: tieni premuto':match.possession===0?'Tocca per sfondare, orienta di lato per schivare; tieni per scattare':'Tocca e rilascia per placcare; tieni premuto per contenere');
@@ -67,8 +67,9 @@ function updateHud(){
     $('controlHint').textContent='CALCIO AUTOMATICO · POI INSEGUI LA PALLA';
   }
   const p=match.controlled;
+  $('staminaTrack').style.width=(55*p.profile.stamina/100)+'px';
   const tired=p.energy<30||p.exhausted;
-  $('energyLabel').textContent=(p.exhausted?'RECUPERO ':tired?'POCA ENERGIA ':'ENERGIA ')+Math.round(p.energy)+'%';
+  $('energyLabel').textContent=(p.exhausted?'RECUPERO ':tired?'POCA ENERGIA ':'ENERGIA ')+Math.round(p.energy)+'/'+p.profile.stamina;
   $('stamina').style.background=p.energy<12||p.exhausted?'#ef947f':tired?'#f4c36c':'#d0e789';
   $('actionB').classList[p.cd>0||tired?'add':'remove']('cooling');
   $('actionC').disabled=paused||match.state!=='playing'||match.phase!=='live'||match.possession!==0||!!match.ball||match.carrier.kickCd>0||match.carrier.energy<12;

@@ -60,8 +60,18 @@ export class Renderer{
     if(p.facing>0){rect(-3,-24,1,1,'#26352e');rect(2,-24,1,1,'#26352e');}
     else{c.fillStyle='#f4f4da';c.font='bold 6px monospace';c.textAlign='center';c.fillText(String(p.number),0,-12);}
     if(carrier){c.save();c.translate(11,-12);c.rotate(-.5);c.fillStyle='#664c35';c.fillRect(-4,-2,10,6);c.fillStyle='#eee8c9';c.fillRect(-4,-3,9,5);c.fillStyle='#967b53';c.fillRect(-1,-2,1,3);c.restore();}
-    if(selected){c.fillStyle='#e6f39a';c.beginPath();c.moveTo(-4,-39);c.lineTo(4,-39);c.lineTo(0,-34);c.fill();}
     c.restore();
+  }
+  drawStamina(c,p,x,y){
+    // Draw after the players, outside their pose transforms: the meter stays horizontal.
+    const top=y-30*1.35*p.profile.height-12;
+    const energy=clamp(p.energy/p.profile.stamina,0,1),width=30*p.profile.stamina/100;
+    c.save();c.translate(x,top);
+    c.fillStyle='#e6f39a';c.beginPath();c.moveTo(-5,-11);c.lineTo(5,-11);c.lineTo(0,-5);c.fill();
+    c.fillStyle='#142d23';c.fillRect(-width/2-2,-2,width+4,8);
+    c.fillStyle='#49664d';c.fillRect(-width/2,0,width,4);
+    c.fillStyle=energy>.55?'#b8de78':energy>.25?'#efc56e':'#ef947f';
+    c.fillRect(-width/2,0,width*energy,4);c.restore();
   }
   drawOverhead(c,p,x,y){
     c.save();c.translate(x,y);c.scale(p.profile.width,p.profile.height);c.rotate(p.facing<0?0:Math.PI);
@@ -76,7 +86,7 @@ export class Renderer{
     this.scrumView+=((match.scrum?1:0)-this.scrumView)*(1-Math.exp(-dt*6));
     const c=this.ctx,w=this.width,h=this.height;
     const aim=match.kickAim?match.kickTarget(match.kickAim,match.kickAim.power):null;
-    this.kickView+=(((aim||match.loose)?1:0)-this.kickView)*(1-Math.exp(-dt*6));
+    this.kickView+=(((aim||match.ball?.kind==='kick')?1:0)-this.kickView)*(1-Math.exp(-dt*6));
     const z=this.zoom*(1-this.scrumView*.22)*(1-this.kickView*.2);
     const focus=aim?{x:(aim.tx+match.carrier.x)/2,y:(aim.ty+match.carrier.y)/2}:match.scrum||match.ball||match.carrier;const look=match.state==='playing'&&!match.scrum&&!aim?match.dir(match.possession)*70:0;
     const desired=h/z>=FIELD.height+70?FIELD.height/2:clamp(focus.y+look,h/(2*z)-35,FIELD.height-h/(2*z)+35);
@@ -124,9 +134,9 @@ export class Renderer{
     }
     if(match.phase==='contact'&&match.contact){
       const p=match.carrier,ratio=clamp(match.contact.remaining/match.contact.duration,0,1);
-      c.fillStyle='#14271fe8';c.fillRect(p.x-40,p.y-76,80,18);
-      c.fillStyle=ratio>.35?'#e4f398':'#f4c36c';c.fillRect(p.x-38,p.y-60,76*ratio,3);
-      c.font='bold 8px monospace';c.fillText(match.possession===0?'PASSA ORA':'CONTATTO',p.x,p.y-64);
+      c.fillStyle='#14271fe8';c.fillRect(p.x-40,p.y-94,80,18);
+      c.fillStyle=ratio>.35?'#e4f398':'#f4c36c';c.fillRect(p.x-38,p.y-78,76*ratio,3);
+      c.font='bold 8px monospace';c.fillText(match.possession===0?'PASSA ORA':'CONTATTO',p.x,p.y-82);
     }
     if(match.kickAim){
       const a=match.kickAim,p=match.carrier,{tx,ty}=match.kickTarget(a,a.power);
@@ -138,13 +148,14 @@ export class Renderer{
     }
     const ordered=[...match.players].sort((a,b)=>a.y-b.y);
     for(const p of ordered){const x=p.px+(p.x-p.px)*alpha,y=p.py+(p.y-p.py)*alpha;if(match.scrum){this.drawOverhead(c,p,x,y);continue;}this.drawPlayer(c,p,x,y,p.id===match.selected,p.id===match.carrierId&&!match.ball&&match.phase!=='scrum');}
+    if(!match.scrum){const p=match.controlled;this.drawStamina(c,p,p.px+(p.x-p.px)*alpha,p.py+(p.y-p.py)*alpha);}
     if(match.scrum&&match.scrum.feed===0){
       const s=match.scrum;c.strokeStyle='#e4f398';c.lineWidth=2;
       const x=s.x+s.side*80,y=s.y-match.dir(0)*45;c.beginPath();c.moveTo(s.x,s.y);c.lineTo(x,y);c.stroke();
       c.fillStyle='#e4f398';c.beginPath();c.ellipse(x,y,14,6,0,0,Math.PI*2);c.fill();
       c.font='bold 8px monospace';c.fillText('USCITA',x,y-12);c.fillStyle='#f3ecd2';c.fillRect(s.x-5,s.y-2,10,5);
     }
-    if(match.ball){const b=match.ball,t=clamp(b.t/b.duration,0,1),height=Math.sin(t*Math.PI)*(match.loose?72:22),ground=match.loose&&t>=1;
+    if(match.ball){const b=match.ball,t=clamp(b.t/b.duration,0,1),height=Math.sin(t*Math.PI)*(b.kind==='fumble'?12:match.loose?72:22),ground=match.loose&&t>=1;
       c.fillStyle='#1c342751';c.beginPath();c.ellipse(b.x,b.y+3,5+height*.02,2+height*.008,0,0,Math.PI*2);c.fill();
       c.save();c.translate(b.x,b.y-(ground?Math.abs(Math.sin(b.groundTime*11))*Math.max(0,5-b.groundTime*6):12)-height);c.rotate(t*9);c.fillStyle='#604d31';c.fillRect(-6,-3,12,6);c.fillStyle='#f3ecd2';c.fillRect(-5,-2,10,4);c.fillStyle='#a68b63';c.fillRect(-1,-2,1,4);c.restore();}
     for(const p of match.particles){c.globalAlpha=clamp(p.life*2,0,1);c.fillStyle=p.color;c.fillRect(p.x,p.y,2,2);}c.globalAlpha=1;
