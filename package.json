@@ -1,0 +1,18 @@
+{
+  "name": "rugby-love",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "test": "node tools/test.mjs",
+    "test:ui": "node --test tests/ui.test.mjs",
+    "test:render": "node tests/render-check.mjs && node tests/conversion-render-check.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "0.1.100"
+  }
+}
