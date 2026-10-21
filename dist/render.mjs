@@ -2,14 +2,14 @@ import {FIELD,clamp} from './engine.mjs';
 import {drawConversion} from './conversion-render.mjs';
 export class Renderer{
   constructor(canvas,map){
-    this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.map=map;this.mc=map.getContext('2d');this.camera={x:240,y:440};this.scrumView=0;this.kickView=0;this.width=1;this.height=1;this.zoom=1;this.dpr=1;this.field=this.makeField();this.resize();
+    this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.map=map;this.mc=map.getContext('2d');this.camera={x:FIELD.width/2,y:FIELD.height/2};this.scrumView=0;this.kickView=0;this.width=1;this.height=1;this.zoom=1;this.dpr=1;this.field=this.makeField();this.resize();
   }
   resize(){
     const r=this.canvas.getBoundingClientRect();this.width=Math.max(1,r.width);this.height=Math.max(1,r.height);this.dpr=Math.min(window.devicePixelRatio||1,2);
-    this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.zoom=this.width<650?this.width/480:Math.min(1.65,this.width/720);this.ctx.imageSmoothingEnabled=false;
+    this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.zoom=this.width<650?this.width/FIELD.width:Math.min(1.65,this.width/720);this.ctx.imageSmoothingEnabled=false;
   }
   makeField(){
-    const canvas=document.createElement('canvas');canvas.width=800;canvas.height=1040;const c=canvas.getContext('2d');c.translate(160,80);
+    const canvas=document.createElement('canvas');canvas.width=FIELD.width+320*FIELD.width/480;canvas.height=FIELD.height+160*FIELD.height/880;const c=canvas.getContext('2d');c.scale(FIELD.width/480,FIELD.height/880);c.translate(160,80);
     c.fillStyle='#304c39';c.fillRect(-160,-80,800,1040);
     const fill=(x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(x,y,w,h);};
     // Static stadium detail is painted once, not rebuilt every frame.
@@ -79,12 +79,12 @@ export class Renderer{
     this.kickView+=(((aim||match.loose)?1:0)-this.kickView)*(1-Math.exp(-dt*6));
     const z=this.zoom*(1-this.scrumView*.22)*(1-this.kickView*.2);
     const focus=aim?{x:(aim.tx+match.carrier.x)/2,y:(aim.ty+match.carrier.y)/2}:match.scrum||match.ball||match.carrier;const look=match.state==='playing'&&!match.scrum&&!aim?match.dir(match.possession)*70:0;
-    const desired=h/z>=950?440:clamp(focus.y+look,h/(2*z)-35,880-h/(2*z)+35);
-    this.camera.x+=((match.scrum?match.scrum.x:aim?focus.x:240)-this.camera.x)*(1-Math.exp(-dt*6));
+    const desired=h/z>=FIELD.height+70?FIELD.height/2:clamp(focus.y+look,h/(2*z)-35,FIELD.height-h/(2*z)+35);
+    this.camera.x+=((match.scrum?match.scrum.x:aim?focus.x:FIELD.width/2)-this.camera.x)*(1-Math.exp(-dt*6));
     this.camera.y+=(desired-this.camera.y)*(1-Math.exp(-dt*5));
     c.setTransform(this.dpr,0,0,this.dpr,0,0);c.fillStyle='#304c39';c.fillRect(0,0,w,h);c.translate(w/2,h/2);c.scale(z,z);c.translate(-this.camera.x,-this.camera.y);
-    c.drawImage(this.field,-160,-80);
-    c.textAlign='center';c.font='bold 18px monospace';c.fillStyle='#d4e0b67a';c.fillText(match.attackDir<0?'IRLANDA':'ITALIA',240,62);c.fillText(match.attackDir<0?'ITALIA':'IRLANDA',240,832);
+    c.drawImage(this.field,-160*FIELD.width/480,-80*FIELD.height/880);
+    c.textAlign='center';c.font='bold 18px monospace';c.fillStyle='#d4e0b67a';c.fillText(match.attackDir<0?'IRLANDA':'ITALIA',FIELD.width/2,FIELD.top-23);c.fillText(match.attackDir<0?'ITALIA':'IRLANDA',FIELD.width/2,FIELD.bottom+37);
     if(match.scrum&&match.scrum.feed===0){
       const s=match.scrum,receiver=match.players[s.side<0?3:4];
       c.strokeStyle='#e4f398';c.lineWidth=2;c.setLineDash([4,4]);
@@ -152,8 +152,8 @@ export class Renderer{
   }
   drawMap(match){
     const c=this.mc;c.fillStyle='#193e2ceb';c.fillRect(0,0,108,172);c.strokeStyle='#a9c49155';c.lineWidth=1;c.strokeRect(7,8,94,156);c.beginPath();c.moveTo(7,86);c.lineTo(101,86);c.stroke();
-    for(const p of match.players){c.fillStyle=p.team===0?'#93c7ee':'#d7e4c1';c.fillRect(p.x/480*94+5,p.y/880*156+6,4,4);}
-    const ball=match.ball||match.carrier;c.fillStyle='#f1c975';c.beginPath();c.arc(ball.x/480*94+7,ball.y/880*156+8,3,0,Math.PI*2);c.fill();
-    c.strokeStyle='#e8efad66';const view=this.height/this.zoom;c.strokeRect(7,clamp((this.camera.y-view/2)/880*156+8,8,164),94,Math.min(view/880*156,156));
+    for(const p of match.players){c.fillStyle=p.team===0?'#93c7ee':'#d7e4c1';c.fillRect(p.x/FIELD.width*94+5,p.y/FIELD.height*156+6,4,4);}
+    const ball=match.ball||match.carrier;c.fillStyle='#f1c975';c.beginPath();c.arc(ball.x/FIELD.width*94+7,ball.y/FIELD.height*156+8,3,0,Math.PI*2);c.fill();
+    c.strokeStyle='#e8efad66';const view=this.height/this.zoom;c.strokeRect(7,clamp((this.camera.y-view/2)/FIELD.height*156+8,8,164),94,Math.min(view/FIELD.height*156,156));
   }
 }

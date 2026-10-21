@@ -8,9 +8,9 @@ test('long hold increases range, saturates power, and neutral stick retains dire
 test('aim lets the carrier run, cancel costs no kick energy and never kicks',()=>{const m=setup(),p=m.carrier,point={x:p.x,y:p.y};m.beginKick();tick(m,.5,{x:1,y:0,sprint:false});assert.ok(distance(p,point)>3&&distance(p,point)<12);m.pass();assert.equal(m.kickAim,null);assert.equal(m.stats.kicks[0],0);assert.equal(p.energy,100);assert.equal(m.releaseKick(),false);});
 test('tackle, try, reset and expiry cancel kick preparation; no ghost kick on release',()=>{for(const kind of ['tackle','try','reset','expiry']){const m=setup();m.beginKick();if(kind==='tackle'){m.guard=0;m.tackle(m.players[7]);}if(kind==='try')m.tryScored(0);if(kind==='reset')m.reset();if(kind==='expiry'){m.time=0;m.step(1/120);}assert.equal(m.kickAim,null,kind);assert.equal(m.releaseKick(),false);assert.equal(m.stats.kicks[0],0);}});
 test('cannot aim in defense, with insufficient stamina or during conversion',()=>{const m=setup();m.lineup(1);assert.equal(m.beginKick(),false);m.lineup(0);m.carrier.energy=11;assert.equal(m.beginKick(),false);m.carrier.energy=100;m.tryScored(0);m.beginConversion();assert.equal(m.beginKick(),false);});
-test('kick aim slows world and clock to 35 percent while direction and power follow real time',()=>{
+test('kick aim slows world and clock to 25 percent while direction and power follow real time',()=>{
  const slow=setup(),normal=setup();slow.beginKick();
- tick(slow,1,{x:1,y:0});tick(normal,.35,{x:1,y:0});
+ tick(slow,1,{x:1,y:0});tick(normal,.25,{x:1,y:0});
  assert.ok(Math.abs(slow.time-normal.time)<.001);
  assert.ok(distance(slow.carrier,normal.carrier)<1);
  assert.ok(Math.abs(slow.kickAim.power-.5)<.001);

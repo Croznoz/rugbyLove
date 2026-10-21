@@ -8,7 +8,7 @@ test('14 players: two complete teams, two halves and clean reset',()=>{
 });
 test('kickoff countdown freezes match clock',()=>{const m=new Match();m.reset();tick(m,1);assert.equal(m.time,60);tick(m,1.5);assert.ok(m.time<60);});
 test('free movement is responsive and respects pitch boundaries',()=>{const m=live();m.guard=99;const y=m.carrier.y;tick(m,.5,{x:1,y:-1});assert.ok(m.carrier.x>250);assert.ok(m.carrier.y<y-15);tick(m,15,{x:1,y:0});assert.ok(m.carrier.x<=FIELD.right-8);});
-test('diagonal input cannot multiply movement speed',()=>{const a=live(),b=live();a.guard=b.guard=99;tick(a,1,{x:1,y:0});tick(b,1,{x:1,y:1});assert.ok(Math.abs(distance(a.carrier,{x:240,y:440})-distance(b.carrier,{x:240,y:440}))<2);});
+test('diagonal input cannot multiply movement speed',()=>{const a=live(),b=live();a.guard=b.guard=99;tick(a,1,{x:1,y:0});tick(b,1,{x:1,y:1});assert.ok(Math.abs(distance(a.carrier,{x:FIELD.width/2,y:FIELD.height/2})-distance(b.carrier,{x:FIELD.width/2,y:FIELD.height/2}))<2);});
 test('both halves only allow lateral or backward passes',()=>{for(const dir of [-1,1]){const m=live();m.attackDir=dir;m.lineup(0);m.passCooldown=0;assert.ok(m.pass());assert.ok((m.ball.ty-m.ball.sy)*dir<=0);}});
 test('a successful pass switches controlled player and counts once',()=>{const m=live();for(const p of m.players.filter(p=>p.team===1))p.y=120;assert.ok(m.pass());const id=m.ball.to;tick(m,.6);assert.equal(m.carrierId,id);assert.equal(m.selected,id);assert.equal(m.stats.passes[0],1);assert.equal(m.ball,null);});
 test('no repeated passes while ball is airborne',()=>{const m=live();assert.ok(m.pass());assert.equal(m.pass(),false);});

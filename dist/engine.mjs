@@ -1,4 +1,4 @@
-export const FIELD={width:480,height:880,left:34,right:446,top:85,bottom:795};
+export const FIELD={width:600,height:1100,left:42.5,right:557.5,top:106.25,bottom:993.75};
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const NUMBERS=[9,10,12,13,11,14,15];
@@ -32,10 +32,10 @@ export class Match{
   get carrier(){return this.players[this.carrierId];}
   get controlled(){return this.players[this.selected];}
   get loose(){return this.ball?.kind==='kick';}
-  lineup(team,x=240,y=440){
+  lineup(team,x=FIELD.width/2,y=FIELD.height/2){
     this.passSelection=null;this.kickAim=null;this.attackPlan=null;this.defensePlan=null;this.scrum=null;this.contact=null;this.defenseGesture=null;this.possession=team;this.carrierId=team*7;const d=this.dir(team);this.ball=null;this.passCooldown=.7;this.guard=1.15;
-    const xs=[240,120,360,62,418,170,310];
-    for(const p of this.players){const own=p.team===team;p.x=xs[p.slot];p.y=clamp(y+(own?(-d*(45+Math.floor(p.slot/2)*22)):(d*(72+Math.floor(p.slot/2)*32))),FIELD.top+24,FIELD.bottom-24);if(own&&p.slot===0){p.x=x;p.y=y;}p.px=p.x;p.py=p.y;p.vx=p.vy=0;p.down=0;p.supportUntil=0;p.burst=0;p.charge=0;p.dive=0;p.kickAnim=0;p.brace=false;p.evade=0;p.tackleWind=0;p.facing=this.dir(p.team);}
+    const xs=[.5,.25,.75,62/480,418/480,170/480,310/480].map(x=>x*FIELD.width);
+    for(const p of this.players){const own=p.team===team;p.x=xs[p.slot];p.y=clamp(y+1.25*(own?(-d*(45+Math.floor(p.slot/2)*22)):(d*(72+Math.floor(p.slot/2)*32))),FIELD.top+24,FIELD.bottom-24);if(own&&p.slot===0){p.x=x;p.y=y;}p.px=p.x;p.py=p.y;p.vx=p.vy=0;p.down=0;p.supportUntil=0;p.burst=0;p.charge=0;p.dive=0;p.kickAnim=0;p.brace=false;p.evade=0;p.tackleWind=0;p.facing=this.dir(p.team);}
     this.selected=team===0?this.carrierId:this.nearest(0,this.carrier).id;
   }
   launchKickoff(){
@@ -44,7 +44,7 @@ export class Match{
     this.phase='live';this.passSelection=null;this.kickAim=null;
     p.kickAnim=.4;p.kickCd=1.2;
     this.ball={kind:'kick',kickoff:true,x:p.x,y:p.y,sx:p.x,sy:p.y,
-      tx:240,ty:440+dir*180,from:p.id,team:p.team,t:0,duration:1.65,groundTime:0,
+      tx:FIELD.width/2,ty:FIELD.height/2+dir*180,from:p.id,team:p.team,t:0,duration:1.65,groundTime:0,
       eligible:this.players.filter(a=>a.team===p.team&&(a.y-p.y)*dir<=0).map(a=>a.id)};
     this.guard=0;this.passCooldown=0;this.stats.kicks[p.team]++;
     this.selected=this.bestDefender()?.id??this.selected;
@@ -77,9 +77,9 @@ export class Match{
     }
     if(p.supportCarrier===c.id&&p.supportUntil>this.elapsed)return p.support;
     const rank=this.attackPlan.ids.indexOf(p.id),dir=this.dir(c.team);
-    const spread=[-155,-85,-38,38,85,155][rank]||0;
+    const spread=([-155,-85,-38,38,85,155][rank]||0)*1.25;
     const close=rank===2||rank===3,wide=rank===0||rank===5;
-    const depth=close?18:wide?38:26;
+    const depth=(close?18:wide?38:26)*1.25;
     const base=clamp(c.x+spread+clamp(c.vx*.25,-18,18),FIELD.left+14,FIELD.right-14);
     const ty=clamp(c.y-dir*depth,FIELD.top-22,FIELD.bottom+22);
     const opponents=this.players.filter(q=>q.team!==p.team&&q.down<=0);
@@ -359,7 +359,7 @@ export class Match{
   }
   beginConversion(){
     this.cancelKick();
-    const {team,x}=this.trySpot,angle=Math.abs(x-240)/206;
+    const {team,x}=this.trySpot,angle=Math.abs(x-FIELD.width/2)/((FIELD.right-FIELD.left)/2);
     this.phase='conversion';this.ball=null;
     this.conversion={team,x,stage:'power',elapsed:0,sweep:0,speed:.72,power:0,accuracy:0,powerLocked:null,accuracyLocked:null,minPower:.58+angle*.12,greenHalf:clamp(.135-angle*.045,.09,.135),flightTime:0,flightDuration:1.65,error:0,crossHeight:0,scored:false,reason:'',resultTime:0,awarded:false};
     this.stats.conversionAttempts[team]++;
@@ -430,7 +430,7 @@ export class Match{
       this.elapsed-gesture.at>=.18&&p.down<=0&&p.dive<=0&&p.cd<=0&&p.energy>=8);
 
     // World and clock slow together; aiming input and power use real time.
-    if(this.phase==='live'&&this.kickAim)dt*=.35;
+    if(this.phase==='live'&&this.kickAim)dt*=.25;
     this.recoverEnergy(dt,input);
     this.elapsed+=dt;
     for(let i=this.particles.length-1;i>=0;i--){const p=this.particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.life<0)this.particles.splice(i,1);}
@@ -477,8 +477,8 @@ export class Match{
       }else if(p.id===this.carrierId&&!this.ball){
         const dir=this.dir(p.team);let repel=0;
         for(const d of defenders){const ahead=(d.y-p.y)*dir;if(ahead>-15&&ahead<110)repel+=(p.x>=d.x?1:-1)*Math.max(0,75-Math.abs(p.x-d.x))*.025;}
-        dx=clamp(repel+(240-p.x)*.002,-.75,.75);dy=dir;
-        if(p.x<60)dx=.8;if(p.x>420)dx=-.8;
+        dx=clamp(repel+(FIELD.width/2-p.x)*.002,-.75,.75);dy=dir;
+        if(p.x<FIELD.left+26)dx=.8;if(p.x>FIELD.right-26)dx=-.8;
       }else{
         let tx,ty;const dir=this.dir(this.possession);
         if(landing){

@@ -1,4 +1,4 @@
-import {clamp} from './engine.mjs';
+import {FIELD,clamp} from './engine.mjs';
 
 // A small, procedural behind-the-kicker view. The flight uses the same
 // gate height and horizontal error as the scoring calculation.
@@ -7,7 +7,7 @@ export function drawConversion(renderer,match){
   const side=window.matchMedia?window.matchMedia('(max-height:560px) and (orientation:landscape)').matches:w/h>1.6&&h<340;
   const vw=side?w-254:w,sh=side?h:Math.max(100,h-201),cx=vw/2;
   const gateY=sh*.66,gap=Math.min(vw*.135,66),heightScale=sh*.22/30;
-  const startX=cx+(s.x-240)/206*Math.min(vw*.29,145),startY=sh*.96;
+  const startX=cx+(s.x-FIELD.width/2)/((FIELD.right-FIELD.left)/2)*Math.min(vw*.29,145),startY=sh*.96;
   const fill=(x,y,width,height,color)=>{c.fillStyle=color;c.fillRect(x,y,width,height);};
   c.setTransform(renderer.dpr,0,0,renderer.dpr,0,0);
   fill(0,0,w,h,'#244635');c.save();c.beginPath();c.rect(0,0,vw,sh);c.clip();fill(0,0,vw,sh,'#8da391');

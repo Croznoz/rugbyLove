@@ -46,7 +46,7 @@ Se la suite UI termina per limiti di memoria, esegui i singoli scenari con
 
 Joystick o WASD/frecce per muoversi. PASSA/J per passare o scegliere il difensore;
 SFONDA/PLACCA con spazio o K, pressione prolungata per scattare in attacco.
-Tieni CALCIA/L, orienta e rilascia. Durante la mira il mondo procede al 35%;
+Tieni CALCIA/L, orienta e rilascia. Durante la mira il mondo procede al 25%;
 la potenza raggiunge il massimo in 3 secondi reali. PASSA annulla.
 Escape/P mette in pausa. Le conversioni usano due pressioni per potenza e precisione.
 

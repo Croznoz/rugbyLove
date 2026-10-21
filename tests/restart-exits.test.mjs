@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Match,distance} from '../dist/engine.mjs';
+import {Match,FIELD,distance} from '../dist/engine.mjs';
 test('each conversion outcome restarts with exactly one contested kick from halfway for either team',()=>{
  for(const team of [0,1])for(const scored of [true,false]){
   const m=new Match();m.reset();m.phase='live';m.lineup(team);m.tryScored(team);m.beginConversion();
   m.conversion.scored=scored;m.resolveConversion();const score=[...m.score],time=m.time;
   m.step(1.81);assert.equal(m.conversion,null);assert.equal(m.phase,'live');assert.equal(m.ball.kickoff,true);
-  assert.equal(m.ball.team,1-team);assert.equal(m.ball.sx,240);assert.equal(m.ball.sy,440);
+  assert.equal(m.ball.team,1-team);assert.equal(m.ball.sx,FIELD.width/2);assert.equal(m.ball.sy,FIELD.height/2);
   assert.equal(m.stats.kicks[1-team],1);assert.equal(m.time,time);assert.deepEqual(m.score,score);
   m.step(.1);assert.equal(m.stats.kicks[1-team],1);assert.ok(m.loose);
  }
