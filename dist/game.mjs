@@ -55,7 +55,7 @@ function updateHud(){
   $('possession').textContent=match.loose?'◌ PALLA CONTESA':match.possession===0?'● PALLA AGLI AZZURRI':'● PALLA ALL’IRLANDA';
   $('phase').textContent=match.state==='menu'?'7 vs 7 · PARTITA RAPIDA':match.loose?'INSEGUI IL CALCIO':match.phase==='contact'?'PASSA ORA · OFFLOAD':match.phase==='ruck'?'RIPARTENZA':match.tackles+' / 3 PLACCAGGI';
   $('labelA').textContent=match.phase==='contact'&&match.possession===0?'OFFLOAD':match.possession===0&&!match.loose?'PASSA':'CAMBIA';$('labelB').textContent=match.loose?'SCATTO':match.possession===0?(Math.abs(directionInput().x)>.55&&Math.abs(directionInput().x)>Math.abs(directionInput().y)*1.25?'SCHIVA':'SFONDA'):match.controlled.brace?'CONTIENI':'PLACCA';
-  $('direction').textContent='ATTACCA '+(match.attackDir<0?'↑':'↓');$('playerNumber').textContent=String(match.controlled.number).padStart(2,'0');$('playerName').textContent=roles[match.controlled.slot];
+  $('direction').textContent='ATTACCA '+(match.attackDir<0?'↑':'↓');$('playerNumber').textContent=String(match.controlled.number).padStart(2,'0');$('playerName').textContent=roles[match.controlled.slot]+' · '+match.controlled.profile.label;
   $('stamina').style.transform='scaleX('+(match.controlled.energy/100)+')';
   $('controlHint').textContent=match.loose?'INSEGUI E RECUPERA.':match.possession===0?(match.phase==='contact'?'A ORA: LIBERA LA PALLA':'INDICA IL COMPAGNO · PREMI PASSA'):'TOCCA: PLACCA · TIENI: CONTIENI';
   $('actionA').setAttribute('aria-label',match.possession===0&&!match.loose?'Passa al compagno evidenziato':'Seleziona il difensore meglio posizionato');

@@ -1,6 +1,13 @@
 export const FIELD={width:600,height:1100,left:42.5,right:557.5,top:106.25,bottom:993.75};
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+// Fixed role profiles: appearance and action bonuses never alter normal running or passing.
+export const PROFILES=Object.freeze({
+  powerful:Object.freeze({label:'POTENTE',width:1.15,height:1.08,sprint:1.28,agility:.95,charge:1.12,tackle:1.1,kick:1}),
+  agile:Object.freeze({label:'AGILE',width:1,height:1,sprint:1.43,agility:1.1,charge:.9,tackle:1,kick:1}),
+  playmaker:Object.freeze({label:'REGISTA',width:1.05,height:1.04,sprint:1.35,agility:1,charge:1,tackle:1,kick:1.12})
+});
+const ROLE_PROFILES=['playmaker','playmaker','powerful','powerful','agile','agile','agile'];
 const NUMBERS=[9,10,12,13,11,14,15];
 export class Match{
   constructor(){this.events=[];this.reset({});this.state='menu';this.phase='live';}
@@ -9,7 +16,7 @@ export class Match{
     this.score=[0,0];this.half=1;this.time=seconds;this.elapsed=0;this.attackDir=-1;this.possession=0;this.tackles=0;this.state='playing';this.phase='kickoff';this.phaseTime=2.1;this.events=[];this.ball=null;this.particles=[];this.cpuThink=0;this.passCooldown=0;this.guard=1;this.selected=0;
     this.passSelection=null;this.kickAim=null;this.attackPlan=null;this.defensePlan=null;this.conversion=null;this.contact=null;this.cpuOffloadAt=-10;this.defenseGesture=null;this.aim={x:0,y:0};
     this.stats={tries:[0,0],conversions:[0,0],conversionAttempts:[0,0],passes:[0,0],offloads:[0,0],scrums:[0,0],tackles:[0,0],breaks:[0,0],kicks:[0,0],possession:[0,0]};
-    this.players=Array.from({length:14},(_,id)=>({id,team:id<7?0:1,slot:id%7,number:NUMBERS[id%7],x:0,y:0,px:0,py:0,vx:0,vy:0,down:0,energy:100,energyWait:0,exhausted:false,burst:0,cd:0,charge:0,chargeX:0,chargeY:0,dive:0,diveX:0,diveY:0,kickAnim:0,kickCd:0,brace:false,evade:0,tackleWind:0,tackleX:0,tackleY:0,anim:0,facing:0}));
+    this.players=Array.from({length:14},(_,id)=>({id,team:id<7?0:1,slot:id%7,number:NUMBERS[id%7],profile:PROFILES[ROLE_PROFILES[id%7]],x:0,y:0,px:0,py:0,vx:0,vy:0,down:0,energy:100,energyWait:0,exhausted:false,burst:0,cd:0,charge:0,chargeX:0,chargeY:0,dive:0,diveX:0,diveY:0,kickAnim:0,kickCd:0,brace:false,evade:0,tackleWind:0,tackleX:0,tackleY:0,anim:0,facing:0}));
     this.lineup(0);this.emit('kickoff','SI GIOCA.','CALCIO D’INIZIO');
   }
   spendEnergy(p,amount){
@@ -77,14 +84,26 @@ export class Match{
     }
     if(p.supportCarrier===c.id&&p.supportUntil>this.elapsed)return p.support;
     const rank=this.attackPlan.ids.indexOf(p.id),dir=this.dir(c.team);
-    const spread=([-155,-85,-38,38,85,155][rank]||0)*1.25;
-    const close=rank===2||rank===3,wide=rank===0||rank===5;
-    const depth=(close?18:wide?38:26)*1.25;
-    const base=clamp(c.x+spread+clamp(c.vx*.25,-18,18),FIELD.left+14,FIELD.right-14);
-    const ty=clamp(c.y-dir*depth,FIELD.top-22,FIELD.bottom+22);
+    // Fan back into the pitch near touch instead of clamping several runners together.
+    const leftRoom=c.x-(FIELD.left+14),rightRoom=FIELD.right-14-c.x;
+    const edge=clamp((150-Math.min(leftRoom,rightRoom))/150,0,1);
+    const inside=leftRoom<rightRoom?1:-1;
+    const central=[-194,-106,-48,48,106,194];
+    const flank=inside>0?[20,65,110,155,205,255]:[-255,-205,-155,-110,-65,-20];
+    const lanes=central.map((x,i)=>x*(1-edge)+flank[i]*edge);
+    const proximity=lanes.map((x,i)=>i).sort((a,b)=>Math.abs(lanes[a])-Math.abs(lanes[b])||a-b);
+    const close=proximity.slice(0,2).includes(rank),wide=proximity.slice(4).includes(rank);
     const opponents=this.players.filter(q=>q.team!==p.team&&q.down<=0);
+    const beaten=opponents.filter(q=>(q.y-c.y)*dir<0).length;
+    const ahead=opponents.filter(q=>(q.y-c.y)*dir>=0&&(q.y-c.y)*dir<150).length;
+    const breakthrough=beaten>=3&&ahead<=1;
+    // Close support follows a break for the offload; outside runners keep their width.
+    const spread=lanes[rank]*(close&&breakthrough?.7:1);
+    const depth=close?(breakthrough?20:24):wide?48:34;
+    const base=clamp(c.x+spread+clamp(c.vx*.15,-10,10),FIELD.left+14,FIELD.right-14);
+    const ty=clamp(c.y-dir*depth,FIELD.top-22,FIELD.bottom+22);
     let tx=base,best=-Infinity;
-    for(const shift of (close?[-8,0,8]:[-25,0,25])){
+    for(const shift of (close?[-4,0,4]:[-10,0,10])){
       const x=clamp(base+shift,FIELD.left+14,FIELD.right-14);
       const gap=Math.min(150,...opponents.map(q=>Math.hypot(q.x-x,q.y-(ty+dir*55))));
       const lane=this.laneClearance(c,{x,y:ty},opponents);
@@ -169,9 +188,9 @@ export class Match{
     return this.kick({x:a.x,y:a.y},a.power);
   }
   kickTarget(aim,power=.5){
-    const p=this.carrier;
-    if(typeof aim==='number')return {tx:clamp(p.x+clamp(aim,-1,1)*125,FIELD.left+12,FIELD.right-12),ty:clamp(p.y+this.dir(p.team)*210,FIELD.top-12,FIELD.bottom+12)};
-    const length=Math.hypot(aim.x,aim.y)||1,range=110+clamp(power,0,1)*200;
+    const p=this.carrier,kick=p.profile.kick;
+    if(typeof aim==='number')return {tx:clamp(p.x+clamp(aim,-1,1)*125*kick,FIELD.left+12,FIELD.right-12),ty:clamp(p.y+this.dir(p.team)*210*kick,FIELD.top-12,FIELD.bottom+12)};
+    const length=Math.hypot(aim.x,aim.y)||1,range=(110+clamp(power,0,1)*200)*kick;
     return {tx:clamp(p.x+aim.x/length*range,FIELD.left+12,FIELD.right-12),ty:clamp(p.y+aim.y/length*range,FIELD.top-12,FIELD.bottom+12)};
   }
   kick(aim=0,power=.5){
@@ -255,10 +274,10 @@ export class Match{
       if(p.energy<30){this.emit('hint','RIPRENDI FIATO','SERVE ENERGIA PER SFONDARE');return;}
       let dx=input.x||0,dy=input.y||0;
       if(Math.hypot(dx,dy)<.15){dx=p.vx;dy=p.vy;if(Math.hypot(dx,dy)<6){dx=0;dy=this.dir(p.team);}}
-      const len=Math.hypot(dx,dy)||1;p.chargeX=dx/len;p.chargeY=dy/len;p.charge=.28+.20*clamp((p.energy-30)/30,0,1);p.burst=.4;this.spendEnergy(p,30);p.cd=1.25;this.emit('charge');
+      const len=Math.hypot(dx,dy)||1;p.chargeX=dx/len;p.chargeY=dy/len;p.charge=(.28+.20*clamp((p.energy-30)/30,0,1))*p.profile.charge;p.burst=.4;this.spendEnergy(p,30);p.cd=1.25;this.emit('charge');
     }else{
       if(p.energy<12){this.emit('hint','RIPRENDI FIATO','IL PLACCAGGIO A CONTATTO RESTA ATTIVO');return;}this.spendEnergy(p,12);p.cd=.9;const c=this.carrier,len=distance(p,c)||1;
-      p.diveX=(c.x-p.x)/len;p.diveY=(c.y-p.y)/len;p.dive=.22;this.emit('dive');
+      p.diveX=(c.x-p.x)/len;p.diveY=(c.y-p.y)/len;p.dive=.22*p.profile.tackle;this.emit('dive');
     }
   }
   tackle(defender,manual=false,finalize=false){
@@ -470,10 +489,10 @@ export class Match{
       if(p.down>0){p.vx=p.vy=0;continue;}
       let dx=0,dy=0,speed=p.team===0?(p.id===this.selected?78:65):this.aiSpeed;
       if(p.dive>0){dx=p.diveX;dy=p.diveY;speed=210;
-      }else if(p.evade>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;speed=150;
+      }else if(p.evade>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;speed=150*p.profile.agility;
       }else if(this.ball?.kind==='pass'&&p.id===this.ball.to){
         dx=this.ball.runX;dy=this.ball.runY;const run=Math.hypot(dx,dy)||1;dx/=run;dy/=run;speed=78;
-      }else if(p.id===this.selected){dx=input.x||0;dy=input.y||0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=1.35;this.spendEnergy(p,dt*24);}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
+      }else if(p.id===this.selected){dx=input.x||0;dy=input.y||0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*24);}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
       }else if(p.id===this.carrierId&&!this.ball){
         const dir=this.dir(p.team);let repel=0;
         for(const d of defenders){const ahead=(d.y-p.y)*dir;if(ahead>-15&&ahead<110)repel+=(p.x>=d.x?1:-1)*Math.max(0,75-Math.abs(p.x-d.x))*.025;}
@@ -536,7 +555,7 @@ export class Match{
               defender.cd=.5;this.emit('miss');
             }
           }else if(defender.dive<=0&&defender.cd<=0&&gap<29){
-            defender.tackleWind=.18;defender.tackleX=(c.x-defender.x)/Math.max(1,gap);
+            defender.tackleWind=.18/defender.profile.tackle;defender.tackleX=(c.x-defender.x)/Math.max(1,gap);
             defender.tackleY=(c.y-defender.y)/Math.max(1,gap);
           }
         }

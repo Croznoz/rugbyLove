@@ -50,6 +50,15 @@ Tieni CALCIA/L, orienta e rilascia. Durante la mira il mondo procede al 25%;
 la potenza raggiunge il massimo in 3 secondi reali. PASSA annulla.
 Escape/P mette in pausa. Le conversioni usano due pressioni per potenza e precisione.
 
+## Profili dei giocatori
+
+Profili fissi e uguali per entrambe le squadre: 9 e 10 registi, 12 e 13 potenti,
+11, 14 e 15 agili. Il profilo compare accanto al ruolo del giocatore selezionato.
+I potenti hanno corporatura più robusta, una finestra di sfondamento più lunga
+e placcaggi più pronti; gli agili scattano e schivano più velocemente;
+i registi calciano il 12% più lontano, mantenendo la mira esatta mostrata a schermo.
+Corsa normale, passaggi e tempi reali di caricamento restano uguali per tutti.
+
 ## Stato del progetto
 
 Ricezioni in corsa, ripartenze senza riallineare le squadre, offload, mischie arcade

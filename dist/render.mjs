@@ -41,7 +41,7 @@ export class Renderer{
     return canvas;
   }
   drawPlayer(c,p,x,y,selected,carrier){
-    c.save();c.translate(x,y);c.fillStyle='#173d2b62';c.beginPath();c.ellipse(4,4,12,5,0,0,Math.PI*2);c.fill();
+    c.save();c.translate(x,y);c.scale(1.35*p.profile.width,1.35*p.profile.height);c.fillStyle='#173d2b62';c.beginPath();c.ellipse(4,4,12,5,0,0,Math.PI*2);c.fill();
     if(selected){c.strokeStyle='#e5f29d';c.lineWidth=1.5;c.beginPath();c.ellipse(0,3,14,6,0,0,Math.PI*2);c.stroke();}
     if(p.charge>0){c.strokeStyle='#f4ca70';c.lineWidth=2;c.beginPath();c.ellipse(0,3,16,7,0,0,Math.PI*2);c.stroke();c.beginPath();for(const offset of [-5,5]){c.moveTo(offset-p.chargeX*19,4-p.chargeY*19);c.lineTo(offset-p.chargeX*29,4-p.chargeY*29);}c.stroke();}
     if(p.dive>0){c.rotate(Math.atan2(p.diveY,p.diveX)+Math.PI/2);c.scale(1,.72);}
@@ -64,7 +64,7 @@ export class Renderer{
     c.restore();
   }
   drawOverhead(c,p,x,y){
-    c.save();c.translate(x,y);c.rotate(p.facing<0?0:Math.PI);
+    c.save();c.translate(x,y);c.scale(p.profile.width,p.profile.height);c.rotate(p.facing<0?0:Math.PI);
     c.fillStyle='#173d2b70';c.beginPath();c.ellipse(2,3,13,10,0,0,Math.PI*2);c.fill();
     c.fillStyle=p.team===0?'#65a9df':'#e9edda';c.fillRect(-11,-6,22,12);
     c.fillStyle=p.team===0?'#4187c6':'#225d43';c.fillRect(-7,-7,14,15);
@@ -104,29 +104,29 @@ export class Renderer{
         const risky=match.laneClearance(match.carrier,target)<19,color=risky?'#ffc27b':'#e4f398';
         c.strokeStyle=color;c.lineWidth=1.6;c.setLineDash([4,6]);c.beginPath();c.moveTo(match.carrier.x,match.carrier.y);c.lineTo(target.x,target.y);c.stroke();c.setLineDash([]);
         c.lineWidth=2.5;c.beginPath();c.ellipse(target.x,target.y+2,16,7,0,0,Math.PI*2);c.stroke();
-        c.fillStyle='#14271fe8';c.fillRect(target.x-28,target.y-52,56,13);
-        c.fillStyle=color;c.font='bold 8px monospace';c.fillText(match.phase==='contact'?'OFFLOAD':risky?'RISCHIO':long?'LUNGO':'PASSA',target.x,target.y-42);
+        c.fillStyle='#14271fe8';c.fillRect(target.x-28,target.y-66,56,13);
+        c.fillStyle=color;c.font='bold 8px monospace';c.fillText(match.phase==='contact'?'OFFLOAD':risky?'RISCHIO':long?'LUNGO':'PASSA',target.x,target.y-56);
       }
     }
     if(match.state==='playing'&&match.phase==='live'&&(match.possession===1||match.loose)){
       const next=match.bestDefender();
       if(next&&next.id!==match.selected){
         c.strokeStyle='#8ddcff';c.lineWidth=1.7;c.setLineDash([3,3]);c.beginPath();c.ellipse(next.x,next.y+2,15,7,0,0,Math.PI*2);c.stroke();c.setLineDash([]);
-        c.fillStyle='#14271fe8';c.fillRect(next.x-25,next.y-52,50,13);c.fillStyle='#8ddcff';c.font='bold 8px monospace';c.fillText('CAMBIA',next.x,next.y-42);
+        c.fillStyle='#14271fe8';c.fillRect(next.x-25,next.y-66,50,13);c.fillStyle='#8ddcff';c.font='bold 8px monospace';c.fillText('CAMBIA',next.x,next.y-56);
       }
     }
     for(const p of match.players){
       if(p.brace||p.tackleWind>0||p.evade>0){
         c.strokeStyle=p.brace?'#8ddcff':p.evade>0?'#e4f398':'#ffc27b';c.lineWidth=2.5;
         c.beginPath();c.ellipse(p.x,p.y+2,p.brace?20:15,8,0,0,Math.PI*2);c.stroke();
-        if(p.brace){c.font='bold 7px monospace';c.fillStyle='#8ddcff';c.fillText('CONTIENI',p.x,p.y-36);}
+        if(p.brace){c.font='bold 7px monospace';c.fillStyle='#8ddcff';c.fillText('CONTIENI',p.x,p.y-49);}
       }
     }
     if(match.phase==='contact'&&match.contact){
       const p=match.carrier,ratio=clamp(match.contact.remaining/match.contact.duration,0,1);
-      c.fillStyle='#14271fe8';c.fillRect(p.x-40,p.y-62,80,18);
-      c.fillStyle=ratio>.35?'#e4f398':'#f4c36c';c.fillRect(p.x-38,p.y-46,76*ratio,3);
-      c.font='bold 8px monospace';c.fillText(match.possession===0?'PASSA ORA':'CONTATTO',p.x,p.y-50);
+      c.fillStyle='#14271fe8';c.fillRect(p.x-40,p.y-76,80,18);
+      c.fillStyle=ratio>.35?'#e4f398':'#f4c36c';c.fillRect(p.x-38,p.y-60,76*ratio,3);
+      c.font='bold 8px monospace';c.fillText(match.possession===0?'PASSA ORA':'CONTATTO',p.x,p.y-64);
     }
     if(match.kickAim){
       const a=match.kickAim,p=match.carrier,{tx,ty}=match.kickTarget(a,a.power);

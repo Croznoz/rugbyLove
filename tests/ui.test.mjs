@@ -83,3 +83,9 @@ test('sideways joystick and action button sidestep without a forward charge',()=
  dispatch('actionB','pointerdown',{pointerId:122});assert.ok(active.carrier.evade>0);assert.equal(active.carrier.charge,0);
  dispatch('actionB','pointerup',{pointerId:122});dispatch('joystickArea','pointerup',{pointerId:121});
 });
+test('selected player label follows role profiles when switching players',()=>{
+ start();
+ for(const [id,label] of [[0,'REGISTA'],[2,'POTENTE'],[4,'AGILE']]){
+  active.carrierId=id;active.selected=id;frame(7);assert.ok(el('playerName').textContent.endsWith(' · '+label));
+ }
+});

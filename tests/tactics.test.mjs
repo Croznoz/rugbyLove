@@ -10,3 +10,27 @@ test('pass selection penalizes an obstructed lane with equally spaced receivers'
 test('support lanes reset on changed carrier and lineup',()=>{const m=live();m.supportPoint(m.players[1],m.carrier);m.carrierId=2;m.elapsed+=.2;m.supportPoint(m.players[1],m.carrier);assert.equal(m.attackPlan.carrier,2);m.defenseTargets(m.carrier);m.lineup(1);assert.equal(m.attackPlan,null);assert.equal(m.defensePlan,null);});
 test('AI changes do not move user-controlled defender or multiply speed',()=>{const m=live();m.lineup(1);m.guard=999;const p=m.controlled,prior={x:p.x,y:p.y};tick(m,.4);assert.ok(distance(p,prior)<1);const before={x:p.x,y:p.y};tick(m,.2,{x:1,y:0});assert.ok(distance(p,before)<17);});
 test('full match with scrum option and active passing completes without nonfinite coordinates',()=>{const m=new Match();m.reset({seconds:20,scrums:true});for(let i=0;i<120*180&&m.state!=='finished';i++){if(i%85===0)m.pass({x:i%170?1:-1,y:0});m.step(1/120,{x:Math.sin(i/100)*.4,y:m.dir(0)});assert.ok(m.players.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)));}assert.equal(m.state,'finished');});
+test('touchline support fans inside with distinct legal lanes for both teams and directions',()=>{
+ for(const team of [0,1])for(const dir of [-1,1])for(const side of [-1,1]){
+  const m=live();m.attackDir=dir;m.lineup(team);const c=m.carrier;
+  c.x=side<0?FIELD.left+8:FIELD.right-8;
+  const points=m.players.filter(p=>p.team===team&&p.id!==c.id).map(p=>m.supportPoint(p,c)).sort((a,b)=>a.x-b.x);
+  for(const point of points){assert.ok(point.x>FIELD.left&&point.x<FIELD.right);assert.ok((point.x-c.x)*side<0);assert.ok((point.y-c.y)*m.dir(team)<0);}
+  for(let i=1;i<points.length;i++)assert.ok(points[i].x-points[i-1].x>20,'support lanes must not collapse at touch');
+  assert.ok(Math.min(...points.map(p=>distance(p,c)))<60,'an offload runner stays close');
+ }
+});
+test('after beating the defensive line close support tightens while wide outlets stay wide',()=>{
+ for(const team of [0,1])for(const dir of [-1,1]){
+  const m=live();m.attackDir=dir;m.lineup(team);const c=m.carrier,d=m.dir(team);
+  const runners=m.players.filter(p=>p.team===team&&p.id!==c.id),opponents=m.players.filter(p=>p.team!==team);
+  for(const p of opponents){p.y=c.y+d*90;p.x=c.x;}
+  const before=new Map(runners.map(p=>[p.id,m.supportPoint(p,c)]));
+  for(const p of opponents)p.y=c.y-d*90;
+  m.elapsed+=.2;
+  for(const p of runners){const point=m.supportPoint(p,c);assert.ok((point.y-c.y)*d<0);
+   if(p.supportRole==='close')assert.ok(distance(point,c)<distance(before.get(p.id),c)-8);
+   if(p.supportRole==='wide')assert.ok(Math.abs(point.x-c.x)>175);
+  }
+ }
+});
