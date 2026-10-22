@@ -74,3 +74,19 @@ test('AI defenders spread back out from a crowd during live play',()=>{
  assert.ok(right.x-left.x>380);
  assert.ok((fullback.y-left.y)*m.dir(c.team)>25);
 });
+
+test('fullback always remains deepest and wings stay widest on both sides',()=>{
+ for(const possession of [0,1])for(const attackDir of [-1,1])for(const x of [FIELD.left+8,FIELD.width/2,FIELD.right-8]){
+  const m=live();m.attackDir=attackDir;m.lineup(possession);const c=m.carrier;c.x=x;c.y=FIELD.height/2;
+  const defenders=m.players.filter(p=>p.team!==possession);m.selected=defenders[6].id;
+  const plan=m.defenseTargets(c),forward=m.dir(c.team),fullback=plan.points.get(defenders[6].id);
+  assert.notEqual(plan.pressure,defenders[6].id,'15 remains out of the pressure role');
+  assert.equal(fullback.role,'cover');
+  for(const wing of [defenders[4],defenders[5]]){
+   const point=plan.points.get(wing.id);
+   assert.ok(Math.abs(point.x-FIELD.width/2)>200,'wings preserve width');
+   assert.ok((fullback.y-point.y)*forward>30,'15 stays deeper toward own try line than the wings');
+  }
+  assert.ok((fullback.y-c.y)*forward>80,'fullback covers behind the defensive line');
+ }
+});

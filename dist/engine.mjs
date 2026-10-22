@@ -159,25 +159,26 @@ export class Match{
     if(old&&old.anchorId===anchorId&&old.carrier===c.id&&old.until>this.elapsed&&eligible.some(p=>p.id===old.pressure))return old;
     const dir=this.dir(c.team),cost=p=>distance(p,c)+((p.y-c.y)*dir<0?18:0)+(p.slot===6?45:0);
     eligible.sort((a,b)=>cost(a)-cost(b));
-    let pressure=eligible[0];
+    // The fullback always stays in the last line; never send the 15 to pressure.
+    let pressure=eligible.find(p=>p.slot!==6)||eligible[0];
     const previous=eligible.find(p=>p.id===old?.pressure);
-    if(previous&&pressure&&cost(previous)<cost(pressure)+14)pressure=previous;
+    if(previous&&pressure&&previous.slot!==6&&cost(previous)<cost(pressure)+14)pressure=previous;
     // A user-controlled defender only takes the pressure role when already close to the carrier.
-    if(pressure?.team===0&&pressure.id===this.selected&&distance(pressure,c)>75)pressure=eligible.find(p=>p.id!==this.selected)||pressure;
-    if(anchor)pressure=anchor;
+    if(pressure?.team===0&&pressure.id===this.selected&&distance(pressure,c)>75)pressure=eligible.find(p=>p.id!==this.selected&&p.slot!==6)||pressure;
+    if(anchor&&anchor.slot!==6)pressure=anchor;
     const remaining=eligible.filter(p=>p.id!==pressure?.id);
     // Preserve role lanes even when the attack bunches up or moves to touch.
     // Only the pressure defender leaves the line; 11/14 sit a step deeper, 15 sweeps.
     const cover=remaining.find(p=>p.slot===6)||[...remaining].sort((a,b)=>(b.y-a.y)*dir)[0];
     const markers=remaining.filter(p=>p.id!==cover?.id);
     const centre=FIELD.width/2,shift=clamp((c.x-centre)*.12,-24,24);
-    const lanes=[-45,45,-135,135,-220,220,0];
+    const lanes=[-38,38,-125,125,-238,238,0];
     const points=new Map();
     if(pressure)points.set(pressure.id,{x:c.x+clamp(c.vx*.18,-16,16),y:c.y+clamp(c.vy*.18,-16,16),role:'pressure'});
-    if(cover)points.set(cover.id,{x:centre+(c.x-centre)*.35,y:c.y+dir*105,role:'cover'});
+    if(cover)points.set(cover.id,{x:centre+(c.x-centre)*.35,y:c.y+dir*116,role:'cover'});
     markers.forEach(p=>points.set(p.id,{
       x:centre+lanes[p.slot]+shift,
-      y:c.y+dir*(p.slot===4||p.slot===5?62:36),role:'mark'
+      y:c.y+dir*(p.slot===4||p.slot===5?74:38),role:'mark'
     }));
     for(const point of points.values()){point.x=clamp(point.x,FIELD.left+8,FIELD.right-8);point.y=clamp(point.y,FIELD.top-16,FIELD.bottom+16);}
     // A defender who has closed on the runner must finish that step before turning.
