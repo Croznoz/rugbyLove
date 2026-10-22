@@ -1,6 +1,7 @@
 # rugbyLove
 
 Progetto completo di rugby arcade 7 contro 7, esportato il 21 ottobre 2026.
+Campo ampliato del 20% in larghezza e lunghezza per favorire le manovre.
 Versione sorgente: `624030572eda7c7136c26fde5a3b4c7866d5ba41`.
 
 ## Aprire con Codex

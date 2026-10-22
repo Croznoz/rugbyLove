@@ -18,7 +18,7 @@ test('ordinary carriers run a little slower than free runners on both teams',()=
  assert.ok(Math.abs(home.carrier.moveSpeed-78*.9)<.1);
  const away=new Match();away.reset({difficulty:'hard'});away.lineup(1);away.phase='live';away.guard=999;away.cpuThink=999;
  for(const p of away.players)if(p.id!==away.carrierId&&p.id!==0)p.down=100;
- Object.assign(away.players[0],{x:450,y:550,vx:0,vy:0});
+ Object.assign(away.players[0],{x:FIELD.width/2+180,y:FIELD.height/2,vx:0,vy:0});
  for(let i=0;i<90;i++)away.step(1/120,{x:0,y:1});
  assert.ok(Math.abs(away.carrier.moveSpeed-88*.9)<.1);
  assert.ok(away.players[0].moveSpeed>away.carrier.moveSpeed*.9);

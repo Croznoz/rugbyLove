@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {Match,FIELD,distance} from '../dist/engine.mjs';
 const live=()=>{const m=new Match();m.reset();m.phase='live';m.guard=999;return m;};
 const tick=(m,t,input={x:0,y:0})=>{for(let i=0;i<Math.ceil(t*120);i++)m.step(1/120,input);};
-test('six support runners have close, channel and wide roles and legal passing depth in both halves',()=>{for(const dir of [-1,1]){const m=live();m.attackDir=dir;const c=m.carrier,roles={};for(const p of m.players.filter(p=>p.team===0&&p.id!==c.id)){const point=m.supportPoint(p,c);roles[p.supportRole]=(roles[p.supportRole]||0)+1;assert.ok((point.y-c.y)*dir<=0);assert.ok(point.x>=FIELD.left&&point.x<=FIELD.right);if(p.supportRole==='close')assert.ok(distance(point,c)<60);}assert.deepEqual(roles,{wide:2,channel:2,close:2});}});
+test('six support runners have close, channel and wide roles and legal passing depth in both halves',()=>{for(const dir of [-1,1]){const m=live();m.attackDir=dir;const c=m.carrier,roles={};for(const p of m.players.filter(p=>p.team===0&&p.id!==c.id)){const point=m.supportPoint(p,c);roles[p.supportRole]=(roles[p.supportRole]||0)+1;assert.ok((point.y-c.y)*dir<=0);assert.ok(point.x>=FIELD.left&&point.x<=FIELD.right);if(p.supportRole==='close')assert.ok(distance(point,c)<72);}assert.deepEqual(roles,{wide:2,channel:2,close:2});}});
 test('one pressure defender, one cover and separate markers hold a defensive line',()=>{const m=live(),c=m.carrier,plan=m.defenseTargets(c),points=[...plan.points.values()];assert.equal(points.filter(p=>p.role==='pressure').length,1);assert.equal(points.filter(p=>p.role==='cover').length,1);assert.equal(points.filter(p=>p.role==='mark').length,5);const cover=points.find(p=>p.role==='cover');assert.ok((cover.y-c.y)*m.dir(c.team)>60);const markers=points.filter(p=>p.role==='mark');assert.ok(new Set(markers.map(p=>Math.round(p.x))).size>=4);});
 test('a grounded pressure defender is immediately replaced and pass switches focus',()=>{const m=live();const a=m.defenseTargets(m.carrier);m.players[a.pressure].down=1;const b=m.defenseTargets(m.carrier);assert.notEqual(a.pressure,b.pressure);m.passCooldown=0;m.pass();const to=m.ball.to;m.step(1/120);assert.equal(m.defensePlan.carrier,to);});
 test('pass selection penalizes an obstructed lane with equally spaced receivers',()=>{const m=live(),c=m.carrier,a=m.players[1],b=m.players[2];a.x=c.x-80;a.y=c.y+30;b.x=c.x+80;b.y=c.y+30;for(const p of m.players.filter(p=>p.team===1)){p.x=240;p.y=100;}const d=m.players[7];d.x=c.x-40;d.y=c.y+15;assert.ok(m.laneClearance(c,a)<m.laneClearance(c,b));assert.ok(m.passValue(b,c)>m.passValue(a,c));});
@@ -84,9 +84,9 @@ test('fullback always remains deepest and wings stay widest on both sides',()=>{
   assert.equal(fullback.role,'cover');
   for(const wing of [defenders[4],defenders[5]]){
    const point=plan.points.get(wing.id);
-   assert.ok(Math.abs(point.x-FIELD.width/2)>200,'wings preserve width');
-   assert.ok((fullback.y-point.y)*forward>30,'15 stays deeper toward own try line than the wings');
+   if(point.role==='mark')assert.ok(Math.abs(point.x-FIELD.width/2)>300,'wings hold the touchline channel');
+   assert.ok((fullback.y-point.y)*forward>60,'15 stays deeper toward own try line than the wings');
   }
-  assert.ok((fullback.y-c.y)*forward>80,'fullback covers behind the defensive line');
+  assert.ok((fullback.y-c.y)*forward>150,'fullback covers well behind the defensive line');
  }
 });

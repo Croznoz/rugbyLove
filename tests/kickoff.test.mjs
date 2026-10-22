@@ -11,6 +11,13 @@ test('both kickoffs form a rugby sevens line with wings, centres and deep cover'
   assert.equal(kick[0].y,half);
   assert.ok(kick[4].x<kick[2].x&&kick[2].x<kick[0].x&&kick[0].x<kick[3].x&&kick[3].x<kick[5].x);
   assert.ok(receive[4].x<receive[2].x&&receive[2].x<receive[0].x&&receive[0].x<receive[3].x&&receive[3].x<receive[5].x);
+  for(const side of [kick,receive]){
+   const towardOwnTryLine=-m.dir(side[0].team);
+   assert.ok(side[4].x<=FIELD.left+12,'left wing is close to the sideline');
+   assert.ok(side[5].x>=FIELD.right-12,'right wing is close to the sideline');
+   assert.ok((side[6].y-side[4].y)*towardOwnTryLine>70,'fullback stays deeper than either wing');
+   assert.ok((side[6].y-side[5].y)*towardOwnTryLine>70,'fullback stays deeper than either wing');
+  }
   assert.ok((kick[6].y-half)*d<(kick[1].y-half)*d);
   assert.ok((receive[6].y-half)*d>(receive[1].y-half)*d);
   assert.ok(kick.every(p=>(p.y-half)*d<=0));

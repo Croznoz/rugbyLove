@@ -1,4 +1,4 @@
-export const FIELD={width:600,height:1100,left:42.5,right:557.5,top:106.25,bottom:993.75};
+export const FIELD={width:720,height:1320,left:51,right:669,top:127.5,bottom:1192.5};
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const CARRIER_PACE=.90;
@@ -13,10 +13,10 @@ const NUMBERS=[9,10,12,13,11,14,15];
 // Slot order: 9, 10, centres 12/13, wings 11/14, fullback 15.
 // Offsets are measured from halfway in the kicking team's attacking direction.
 const KICKING_FORMATION=Object.freeze([
-  [0,0],[0,-76],[-98,-34],[98,-34],[-220,-52],[220,-52],[0,-146]
+  [0,0],[0,-76],[-98,-34],[98,-34],[-275,-52],[275,-52],[0,-146]
 ]);
 const RECEIVING_FORMATION=Object.freeze([
-  [0,104],[0,172],[-100,88],[100,88],[-220,132],[220,132],[0,230]
+  [0,104],[0,172],[-100,88],[100,88],[-275,132],[275,132],[0,230]
 ]);
 export class Match{
   constructor(){this.events=[];this.reset({});this.state='menu';this.phase='live';}
@@ -58,8 +58,8 @@ export class Match{
     this.passSelection=null;this.kickAim=null;this.attackPlan=null;this.defensePlan=null;this.scrum=null;this.contact=null;this.defenseGesture=null;this.possession=team;this.carrierId=team*7;const d=this.dir(team);this.ball=null;this.passCooldown=.7;this.guard=1.15;
     for(const p of this.players){
       const own=p.team===team,offset=(own?KICKING_FORMATION:RECEIVING_FORMATION)[p.slot];
-      p.x=clamp(x+offset[0],FIELD.left+8,FIELD.right-8);
-      p.y=clamp(y+d*offset[1],FIELD.top+24,FIELD.bottom-24);
+      p.x=clamp(x+offset[0]*(FIELD.width/600),FIELD.left+8,FIELD.right-8);
+      p.y=clamp(y+d*offset[1]*(FIELD.height/1100),FIELD.top+24,FIELD.bottom-24);
       p.px=p.x;p.py=p.y;p.vx=p.vy=0;p.moveSpeed=0;p.down=0;p.supportUntil=0;p.burst=0;p.charge=0;p.dive=0;p.kickAnim=0;p.dominantAttempt=false;p.brace=false;p.evade=0;p.tackleWind=0;p.facing=this.dir(p.team);
     }
     this.selected=team===0?this.carrierId:this.nearest(0,this.carrier).id;
@@ -70,7 +70,7 @@ export class Match{
     this.phase='live';this.passSelection=null;this.kickAim=null;
     p.kickAnim=.4;p.kickCd=1.2;
     this.ball={kind:'kick',kickoff:true,x:p.x,y:p.y,sx:p.x,sy:p.y,
-      tx:FIELD.width/2,ty:FIELD.height/2+dir*180,from:p.id,team:p.team,t:0,duration:1.65,groundTime:0,
+      tx:FIELD.width/2,ty:FIELD.height/2+dir*216,from:p.id,team:p.team,t:0,duration:1.65,groundTime:0,
       eligible:this.players.filter(a=>a.team===p.team&&(a.y-p.y)*dir<=0).map(a=>a.id)};
     this.guard=0;this.passCooldown=0;this.stats.kicks[p.team]++;
     this.selected=this.bestDefender()?.id??this.selected;
@@ -99,8 +99,8 @@ export class Match{
     const run=this.loopRun;
     if(!run||this.elapsed>=run.until||run.from!==p.id||run.to!==c.id||p.down>0||
       this.possession!==run.team||this.loose||!['live','contact'].includes(this.phase))return null;
-    return {x:clamp(c.x+run.side*55,FIELD.left+16,FIELD.right-16),
-      y:clamp(c.y-this.dir(c.team)*28,FIELD.top-22,FIELD.bottom+22)};
+    return {x:clamp(c.x+run.side*55*(FIELD.width/600),FIELD.left+16,FIELD.right-16),
+      y:clamp(c.y-this.dir(c.team)*28*(FIELD.height/1100),FIELD.top-22,FIELD.bottom+22)};
   }
   supportPoint(p,c){
     const loop=this.loopPoint(p,c);if(loop){p.supportRole='loop';return loop;}
@@ -112,36 +112,37 @@ export class Match{
     if(p.supportCarrier===c.id&&p.supportUntil>this.elapsed)return p.support;
     const rank=this.attackPlan.ids.indexOf(p.id),dir=this.dir(c.team);
     // Fan back into the pitch near touch instead of clamping several runners together.
+    const sx=FIELD.width/600,sy=FIELD.height/1100;
     const leftRoom=c.x-(FIELD.left+14),rightRoom=FIELD.right-14-c.x;
-    const edge=clamp((150-Math.min(leftRoom,rightRoom))/150,0,1);
+    const edge=clamp((150*sx-Math.min(leftRoom,rightRoom))/(150*sx),0,1);
     const inside=leftRoom<rightRoom?1:-1;
-    const central=[-194,-106,-48,48,106,194];
-    const flank=inside>0?[20,65,110,155,205,255]:[-255,-205,-155,-110,-65,-20];
+    const central=[-194,-106,-48,48,106,194].map(v=>v*sx);
+    const flank=(inside>0?[20,65,115,165,225,285]:[-285,-225,-165,-115,-65,-20]).map(v=>v*sx);
     const lanes=central.map((x,i)=>x*(1-edge)+flank[i]*edge);
     const proximity=lanes.map((x,i)=>i).sort((a,b)=>Math.abs(lanes[a])-Math.abs(lanes[b])||a-b);
     const close=proximity.slice(0,2).includes(rank),wide=proximity.slice(4).includes(rank);
     const opponents=this.players.filter(q=>q.team!==p.team&&q.down<=0);
     const beaten=opponents.filter(q=>(q.y-c.y)*dir<0).length;
-    const ahead=opponents.filter(q=>(q.y-c.y)*dir>=0&&(q.y-c.y)*dir<150).length;
+    const ahead=opponents.filter(q=>(q.y-c.y)*dir>=0&&(q.y-c.y)*dir<150*(FIELD.height/1100)).length;
     const breakthrough=beaten>=3&&ahead<=1;
     // Close support follows a break for the offload; outside runners keep their width.
     const spread=lanes[rank]*(close&&breakthrough?.7:1);
-    const depth=close?(breakthrough?20:24):wide?48:34;
+    const depth=(close?(breakthrough?20:24):wide?48:34)*sy;
     // Each support lane has a distinct attacking intention: the close runner
     // bends into the nearest gap, the channel runner offers a return angle,
     // while the wide runner holds width for a genuine two-on-one.
     const role=close?'close':wide?'wide':'channel';
     const pressure=opponents.filter(q=>(q.y-c.y)*dir>=-20&&(q.y-c.y)*dir<125);
     const gapSide=pressure.length?pressure.reduce((best,q)=>Math.abs(q.x-c.x)<Math.abs(best-c.x)?q.x:best,c.x):c.x;
-    const bend=role==='close'?clamp((c.x-gapSide)*.55,-34,34):role==='channel'?clamp((c.x-gapSide)*-.3,-22,22):0;
-    const base=clamp(c.x+spread+bend+clamp(c.vx*.15,-10,10),FIELD.left+14,FIELD.right-14);
+    const bend=role==='close'?clamp((c.x-gapSide)*.55,-34*sx,34*sx):role==='channel'?clamp((c.x-gapSide)*-.3,-22*sx,22*sx):0;
+    const base=clamp(c.x+spread+bend+clamp(c.vx*.15,-10*sx,10*sx),FIELD.left+14,FIELD.right-14);
     const ty=clamp(c.y-dir*depth,FIELD.top-22,FIELD.bottom+22);
     let tx=base,best=-Infinity;
-    for(const shift of (close?[-4,0,4]:[-10,0,10])){
+    for(const shift of (close?[-4,0,4]:[-10,0,10]).map(v=>v*sx)){
       const x=clamp(base+shift,FIELD.left+14,FIELD.right-14);
-      const gap=Math.min(150,...opponents.map(q=>Math.hypot(q.x-x,q.y-(ty+dir*55))));
+      const gap=Math.min(150*sx,...opponents.map(q=>Math.hypot(q.x-x,q.y-(ty+dir*55*sy))));
       const lane=this.laneClearance(c,{x,y:ty},opponents);
-      const value=gap*.55+Math.min(lane,65)*.7-Math.abs(shift)*.3;
+      const value=gap*.55+Math.min(lane,65*sx)*.7-Math.abs(shift)*.3;
       if(value>best){best=value;tx=x;}
     }
     p.supportRole=role;p.supportIntent=role==='close'?'gap':role==='wide'?'width':'return';
@@ -157,7 +158,7 @@ export class Match{
     const old=this.defensePlan,eligible=this.players.filter(p=>p.team!==c.team&&p.down<=0);
     const anchor=eligible.find(p=>p.brace),anchorId=anchor?.id??-1;
     if(old&&old.anchorId===anchorId&&old.carrier===c.id&&old.until>this.elapsed&&eligible.some(p=>p.id===old.pressure))return old;
-    const dir=this.dir(c.team),cost=p=>distance(p,c)+((p.y-c.y)*dir<0?18:0)+(p.slot===6?45:0);
+    const dir=this.dir(c.team),cost=p=>distance(p,c)+((p.y-c.y)*dir<0?18:0)+(p.slot===6?45*(FIELD.width/600):0);
     eligible.sort((a,b)=>cost(a)-cost(b));
     // The fullback always stays in the last line; never send the 15 to pressure.
     let pressure=eligible.find(p=>p.slot!==6)||eligible[0];
@@ -171,14 +172,14 @@ export class Match{
     // Only the pressure defender leaves the line; 11/14 sit a step deeper, 15 sweeps.
     const cover=remaining.find(p=>p.slot===6)||[...remaining].sort((a,b)=>(b.y-a.y)*dir)[0];
     const markers=remaining.filter(p=>p.id!==cover?.id);
-    const centre=FIELD.width/2,shift=clamp((c.x-centre)*.12,-24,24);
-    const lanes=[-38,38,-125,125,-238,238,0];
+    const sx=FIELD.width/600,sy=FIELD.height/1100,centre=FIELD.width/2,shift=clamp((c.x-centre)*.12,-24*sx,24*sx);
+    const lanes=[-38,38,-125,125,-300,300,0].map(v=>v*sx);
     const points=new Map();
     if(pressure)points.set(pressure.id,{x:c.x+clamp(c.vx*.18,-16,16),y:c.y+clamp(c.vy*.18,-16,16),role:'pressure'});
-    if(cover)points.set(cover.id,{x:centre+(c.x-centre)*.35,y:c.y+dir*116,role:'cover'});
+    if(cover)points.set(cover.id,{x:centre+(c.x-centre)*.35,y:c.y+dir*168*sy,role:'cover'});
     markers.forEach(p=>points.set(p.id,{
       x:centre+lanes[p.slot]+shift,
-      y:c.y+dir*(p.slot===4||p.slot===5?74:38),role:'mark'
+      y:c.y+dir*(p.slot===4||p.slot===5?74:38)*sy,role:'mark'
     }));
     for(const point of points.values()){point.x=clamp(point.x,FIELD.left+8,FIELD.right-8);point.y=clamp(point.y,FIELD.top-16,FIELD.bottom+16);}
     // A defender who has closed on the runner must finish that step before turning.
@@ -251,8 +252,8 @@ export class Match{
   }
   kickTarget(aim,power=.5){
     const p=this.carrier,kick=p.profile.kick;
-    if(typeof aim==='number')return {tx:clamp(p.x+clamp(aim,-1,1)*125*kick,FIELD.left+12,FIELD.right-12),ty:clamp(p.y+this.dir(p.team)*210*kick,FIELD.top-12,FIELD.bottom+12)};
-    const length=Math.hypot(aim.x,aim.y)||1,range=(power<=.32?70+clamp(power,0,.32)*120:110+clamp(power,0,1)*200)*kick;
+    if(typeof aim==='number')return {tx:clamp(p.x+clamp(aim,-1,1)*150*kick,FIELD.left+12,FIELD.right-12),ty:clamp(p.y+this.dir(p.team)*252*kick,FIELD.top-12,FIELD.bottom+12)};
+    const length=Math.hypot(aim.x,aim.y)||1,range=(power<=.32?70+clamp(power,0,.32)*120:110+clamp(power,0,1)*200)*(FIELD.height/1100)*kick;
     return {tx:clamp(p.x+aim.x/length*range,FIELD.left+12,FIELD.right-12),ty:clamp(p.y+aim.y/length*range,FIELD.top-12,FIELD.bottom+12)};
   }
   kick(aim=0,power=.5){
