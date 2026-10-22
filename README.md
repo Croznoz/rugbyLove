@@ -69,7 +69,7 @@ l’occasione: un tocco su PLACCA (o K/spazio) esegue il tuffo. Il placcaggio pe
 ha un fermo d’impatto di 65 ms, un’onda dorata e un suono dedicato quando l’audio è attivo.
 Entrambe le squadre possono recuperare automaticamente il pallone; nessun nuovo comando.
 Corsa normale e passaggi non dipendono dalla stamina. Con la palla in mano la
-velocità ordinaria cala leggermente (10%) per entrambe le squadre: un compagno
+velocità ordinaria cala del 18% per entrambe le squadre: un compagno
 senza palla o un difensore può guadagnare terreno. I tempi reali di caricamento
 restano uguali per tutti.
 

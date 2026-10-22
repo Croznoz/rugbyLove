@@ -1,7 +1,7 @@
 export const FIELD={width:720,height:1320,left:51,right:669,top:127.5,bottom:1192.5};
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-const CARRIER_PACE=.90;
+const CARRIER_PACE=.82;
 // Fixed role profiles: appearance and action bonuses never alter normal running or passing.
 export const PROFILES=Object.freeze({
   powerful:Object.freeze({label:'POTENTE',stamina:90,width:1.15,height:1.08,sprint:1.28,agility:.95,charge:1.12,tackle:1.1,kick:1}),
