@@ -54,10 +54,6 @@ export class Renderer{
     fill(0,0,480,880,ART.grass);
     for(let i=0;i<10;i++)fill(34,85+i*71,412,71,i%2?'#89aa82':'#8dae85');
     fill(34,30,412,55,'#7e9f7c');fill(34,795,412,55,'#7e9f7c');
-    // Broad low-poly light and shadow planes across the turf.
-    polygon(c,[[34,85],[175,85],[352,250],[446,335],[446,415],[310,325],[170,220]],'#c4c98535');
-    polygon(c,[[34,470],[240,390],[446,485],[446,600],[255,540],[34,645]],'#375e5630');
-    polygon(c,[[34,700],[210,610],[446,720],[446,795],[34,795]],'#35594a24');
     c.strokeStyle=ART.line;c.lineWidth=1.4;c.strokeRect(34,30,412,820);
     for(const y of [85,241,440,639,795]){c.beginPath();c.moveTo(34,y);c.lineTo(446,y);c.stroke();}
     c.save();c.setLineDash([7,8]);c.lineWidth=1;for(const y of [120,369,511,760]){c.beginPath();c.moveTo(34,y);c.lineTo(446,y);c.stroke();}for(const x of [69,140,340,411]){c.beginPath();c.moveTo(x,85);c.lineTo(x,795);c.stroke();}c.restore();
@@ -74,7 +70,7 @@ export class Renderer{
     return canvas;
   }
   drawPlayer(c,p,x,y,selected,carrier){
-    c.save();c.translate(x,y);c.scale(1.55*p.profile.width,1.58*p.profile.height);
+    c.save();c.translate(x,y);c.scale(1.35*p.profile.width,1.35*p.profile.height);
     polygon(c,[[-8,4],[6,1],[36,20],[28,26]],'#355d5730');
     c.fillStyle='#355d5738';c.beginPath();c.ellipse(0,5,10,4,0,0,Math.PI*2);c.fill();
     if(selected){c.strokeStyle=ART.sun;c.lineWidth=1.5;c.beginPath();c.ellipse(0,4,14,6,0,0,Math.PI*2);c.stroke();}
@@ -86,46 +82,35 @@ export class Renderer{
     const kit=KITS[p.team],outline=ART.deep,powerful=p.profile.label==='POTENTE';
     const skins=[['#eaa16b','#aa5538','#ffd092'],['#bc7850','#743c32','#e9a46e'],['#efb77d','#b96c43','#ffdaa0']], [skin,skinShade,skinLight]=skins[p.slot%3];
     const run=Math.min(1,Math.hypot(p.vx,p.vy)/40),s=p.kickAnim>0?-5:Math.round(Math.sin(p.anim)*3*run);
-    // Athletic low-poly silhouette: broad thighs, defined socks and angular shoes.
-    polygon(c,[[-8,-16],[0,-14],[1,-4],[-2,2],[-9,1],[-11,-7]],skin);
-    polygon(c,[[1,-14],[8,-16],[11,-7],[9,1],[2,2],[-1,-4]],skinShade);
-    polygon(c,[[-9,-5],[-2,-5],[-3,8],[-5,11],[-10,10]],kit.socks);
-    polygon(c,[[2,-5],[9,-5],[10,10],[5,11],[3,7]],kit.socks);
-    rect(-9,-3,7,2,kit.trim);rect(2,-3,7,2,kit.trim);
-    polygon(c,[[-10,8],[-4,8],[-2,11],[-3,13],[-12,13],[-14,11]],outline);
-    polygon(c,[[4,8],[10,8],[13,10],[13,13],[4,13],[2,11]],outline);
-    rect(-12,10,8,1,'#fff0cf');rect(5,10,8,1,'#fff0cf');
-    // Ivory shorts sit above the muscular legs, with a shaded outer panel.
-    polygon(c,[[-10,-21],[9,-21],[10,-10],[2,-8],[0,-14],[-2,-8],[-9,-10]],kit.shorts);
-    polygon(c,[[2,-20],[9,-21],[10,-10],[3,-9]],kit.shortShade);
-    polygon(c,[[-8,-19],[4,-19],[5,-17],[-7,-16]],kit.shortLight);
-    // Faceted jersey with a bright shoulder plane, dark side and clear number patch.
-    polygon(c,[[-8,-37],[5,-37],[11,-32],[12,-22],[8,-17],[-9,-17],[-12,-23],[-11,-32]],kit.body);
-    polygon(c,[[-8,-37],[4,-37],[8,-33],[-10,-31]],kit.light);
-    polygon(c,[[5,-36],[11,-32],[12,-22],[8,-18],[5,-21]],kit.shade);
-    polygon(c,[[-11,-32],[-16,-29],[-15,-22],[-11,-22],[-8,-28]],kit.body);
-    polygon(c,[[10,-32],[15,-29],[15,-22],[11,-21],[8,-27]],kit.shade);
-    // Arms hang outside the torso and catch a warm edge of light.
-    polygon(c,[[-14,-24],[-11,-23],[-10,-16],[-12,-9],[-15,-9],[-17,-13]],skin);
-    polygon(c,[[-14,-24],[-11,-23],[-10,-16],[-12,-14]],skinLight);
-    polygon(c,[[11,-23],[14,-24],[17,-13],[15,-8],[12,-9],[10,-16]],skinShade);
-    polygon(c,[[11,-23],[14,-24],[15,-14],[12,-15]],skin);
-    rect(-16,-14,4,2,kit.trim);rect(13,-14,4,2,kit.trim);
-    // Neck and compact hair silhouette, lit from the upper left.
-    rect(-3,-40,6,5,skinShade);rect(-2,-39,3,4,skinLight);
-    polygon(c,[[-5,-47],[3,-48],[6,-44],[5,-39],[-4,-39],[-6,-43]],skin);
-    polygon(c,[[2,-47],[6,-44],[5,-39],[1,-40]],skinShade);
+    // Simple faceted volumes, with one sunlit face and one shaded face.
+    for(const [lx,offset] of [[-7,s],[2,-s]]){
+      rect(lx,-11,5,12+offset,skin);rect(lx+3,-11,2,12+offset,skinShade);
+      rect(lx,offset,5,9,kit.socks);rect(lx,offset,5,2,kit.trim);
+      polygon(c,[[lx-1,8+offset],[lx+5,8+offset],[lx+7,11+offset],[lx-1,11+offset]],outline);
+    }
+    polygon(c,[[-9,-17],[9,-17],[8,-6],[1,-6],[0,-11],[-2,-6],[-8,-6]],kit.shorts);
+    polygon(c,[[2,-17],[9,-17],[8,-6],[2,-6]],kit.shortShade);
+    polygon(c,[[-7,-32],[6,-32],[11,-26],[8,-16],[-8,-16],[-11,-26]],kit.body);
+    polygon(c,[[-7,-32],[6,-32],[9,-28],[-9,-28]],kit.light);
+    polygon(c,[[6,-31],[11,-26],[8,-16],[5,-16]],kit.shade);
+    for(const side of [-1,1]){
+      const ax=side<0?-12:8,arm=side<0?-s:carrier?-3:s;
+      rect(ax,-27,4,7,kit.body);rect(ax,-21+arm,4,9,skin);rect(ax+2,-21+arm,2,9,skinShade);
+    }
+    rect(-3,-35,6,5,skinShade);
+    polygon(c,[[-4,-42],[3,-42],[5,-39],[4,-34],[-3,-34],[-5,-38]],skin);
+    polygon(c,[[2,-42],[5,-39],[4,-34],[1,-34]],skinShade);
     const hair=['#69564a','#3c4641','#967252'][p.slot%3];
-    polygon(c,[[-5,-47],[2,-49],[6,-46],[5,-43],[-2,-44],[-6,-42]],hair);
-    if(p.facing<0)polygon(c,[[-5,-46],[5,-46],[5,-40],[-4,-40]],hair);
-    if(powerful){rect(-5,-47,11,3,kit.shade);rect(-6,-44,2,5,kit.body);rect(4,-44,2,5,kit.shade);}
+    polygon(c,[[-4,-42],[3,-43],[5,-40],[2,-39],[-5,-40]],hair);
+    if(p.facing<0)rect(-4,-40,7,4,hair);
+    if(powerful){rect(-5,-41,9,3,kit.shade);rect(-5,-40,2,5,kit.body);rect(3,-40,2,5,kit.shade);}
     if(carrier){c.save();c.translate(12,-19);c.rotate(-.5);c.fillStyle='#fff0d0';c.beginPath();c.ellipse(0,0,7,4,0,0,Math.PI*2);c.fill();rect(-2,-3,2,6,'#b7a582');c.restore();}
     // Number is the last layer, so arms and the ball never cover it.
-    drawShirtNumber(c,p.number,-31,kit);c.restore();
+    drawShirtNumber(c,p.number,-27,kit);c.restore();
   }
   drawStamina(c,p,x,y){
     // Draw after the players, outside their pose transforms: the meter stays horizontal.
-    const top=y-49*1.58*p.profile.height-12;
+    const top=y-43*1.35*p.profile.height-12;
     const energy=clamp(p.energy/p.profile.stamina,0,1),width=30*p.profile.stamina/100;
     c.save();c.translate(x,top);
     c.fillStyle='#e6f39a';c.beginPath();c.moveTo(-5,-11);c.lineTo(5,-11);c.lineTo(0,-5);c.fill();
