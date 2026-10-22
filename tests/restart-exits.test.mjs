@@ -18,6 +18,7 @@ test('expired half ends after conversion without an extra restart kick',()=>{
 test('scrum exit keeps the last side selection, moves the ball there and never teleports the teams',()=>{
  for(const direction of [-1,1])for(const side of [-1,1]){
   const m=new Match();m.reset({scrums:true});m.phase='live';m.attackDir=direction;m.beginScrum(0);
+  m.scrum.elapsed=.2;m.scrum.needle=.5;assert.equal(m.scrumAction(),true);
   for(let i=0;i<210;i++)m.step(1/120,{x:side,sprint:true});
   for(let i=0;i<30&&m.scrum;i++)m.step(1/120,{x:0,sprint:true});
   const before=m.players.map(p=>({x:p.x,y:p.y}));m.step(1/120,{x:0,sprint:true});

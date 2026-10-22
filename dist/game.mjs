@@ -3,7 +3,7 @@ import {Renderer} from './render.mjs';
 const $=id=>document.getElementById(id);
 const match=new Match(),renderer=new Renderer($('pitch'),$('minimap'));
 const input={x:0,y:0,sprint:false},keys=new Set();
-let kickPointer=null,scrumPointer=null,joyPointer=null,stickX=0,stickY=0,buttonPointer=null,paused=false,last=0,accumulator=0,hudAt=0,noticeUntil=0,sound=false,audio=null,frameId=0;
+let kickPointer=null,joyPointer=null,stickX=0,stickY=0,buttonPointer=null,paused=false,last=0,accumulator=0,hudAt=0,noticeUntil=0,sound=false,audio=null,frameId=0;
 const STEP=1/120,roles=['MEDIANO','APERTURA','CENTRO','CENTRO','ALA','ALA','ESTREMO'];
 function audioReady(){if(!sound)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume().catch(()=>{});}catch{}}
 function beep(freq=440,duration=.08,type='sine',volume=.04,delay=0){if(!sound||!audio)return;const o=audio.createOscillator(),g=audio.createGain(),at=audio.currentTime+delay;o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(volume,at+.006);g.gain.exponentialRampToValueAtTime(.001,at+duration);o.connect(g);g.connect(audio.destination);o.start(at);o.stop(at+duration+.01);}
@@ -21,7 +21,7 @@ function updateCrowd(){
   }
   if(crowd)crowd.gain.setTargetAtTime(sound?intensity*.16:0,audio.currentTime,sound&&intensity>0?.18:.025);
 }
-function releaseControls(){match.releaseSpecial(true);kickPointer=null;match.cancelKick();scrumPointer=null;joyPointer=null;buttonPointer=null;stickX=stickY=0;keys.clear();input.x=input.y=0;input.sprint=false;$('stick').style.transform='translate(0px,0px)';for(const id of ['actionA','actionB','actionC'])$(id).classList.remove('pressed');}
+function releaseControls(){match.releaseSpecial(true);kickPointer=null;match.cancelKick();joyPointer=null;buttonPointer=null;stickX=stickY=0;keys.clear();input.x=input.y=0;input.sprint=false;$('stick').style.transform='translate(0px,0px)';for(const id of ['actionA','actionB','actionC'])$(id).classList.remove('pressed');}
 function notice(text,tag,time=1100){$('noticeText').textContent=text;$('noticeTag').textContent=tag;$('notice').classList.add('show');noticeUntil=performance.now()+time;}
 function consumeEvents(){
   for(const e of match.events){
@@ -63,9 +63,9 @@ function updateHud(){
   if(match.phase==='scrum'){
     $('possession').textContent='MISCHIA ARCADE';$('phase').textContent='INTRODUCE '+(match.scrum.feed===0?'ITALIA':'IRLANDA');
     $('actionA').disabled=true;$('actionB').disabled=paused||match.scrum.feed===1;$('actionC').disabled=true;
-    $('labelA').textContent='—';$('labelB').textContent=match.scrum.feed===0?'SPINGI':'AUTO';$('labelC').textContent='—';
-    $('actionB').classList.remove('cooling');$('actionB').setAttribute('aria-label','Tieni premuto per spingere in mischia');
-    $('controlHint').textContent=match.scrum.feed===0?'TIENI B · JOYSTICK: LATO D’USCITA':'MISCHIA DIFENSIVA AUTOMATICA';return;
+    $('labelA').textContent='—';$('labelB').textContent=match.scrum.feed===0?'DUELLA':'AUTO';$('labelC').textContent='—';
+    $('actionB').classList.remove('cooling');$('actionB').setAttribute('aria-label','Premi quando la lancetta è nel verde per duellare in mischia');
+    $('controlHint').textContent=match.scrum.feed===0?'PREMI B NEL VERDE · JOYSTICK: USCITA':'MISCHIA DIFENSIVA AUTOMATICA';return;
   }
   $('actionA').disabled=paused||(match.phase==='contact'&&match.possession!==0);$('actionB').disabled=match.phase==='contact';$('labelC').textContent=match.kickAim?'RILASCIA':'CALCIA';$('actionC').setAttribute('aria-label','Tieni premuto, mira col joystick e rilascia per calciare');
   $('possession').textContent=match.loose?'◌ PALLA CONTESA':match.possession===0?'● PALLA AGLI AZZURRI':'● PALLA ALL’IRLANDA';
@@ -109,8 +109,8 @@ function showResult(){
 }
 function actionA(){if(paused)return;audioReady();match.pass(directionInput());updateHud();}
 function directionInput(){return {x:stickX+(keys.has('ArrowRight')||keys.has('KeyD')?1:0)-(keys.has('ArrowLeft')||keys.has('KeyA')?1:0),y:stickY+(keys.has('ArrowDown')||keys.has('KeyS')?1:0)-(keys.has('ArrowUp')||keys.has('KeyW')?1:0)};}
-function actionB(){if(paused)return;audioReady();match.special(directionInput());}
-function beginB(){if(paused)return;audioReady();match.beginSpecial(directionInput());}
+function actionB(){if(paused)return;audioReady();if(match.phase==='scrum'){match.scrumAction();updateHud();return;}match.special(directionInput());}
+function beginB(){if(paused)return;audioReady();if(match.phase==='scrum'){match.scrumAction();updateHud();return;}match.beginSpecial(directionInput());}
 function stopConversion(){if(paused)return;audioReady();match.conversionAction();}
 function actionC(){if(paused)return;if(match.phase==='conversion'){stopConversion();return;}audioReady();if(match.kickAim)match.releaseKick();else match.beginKick(directionInput());}
 const conversionButton=$('conversionStop');
@@ -132,7 +132,7 @@ function releaseStick(e){if(e.pointerId!==joyPointer)return;joyPointer=null;stic
 ja.addEventListener('pointerup',releaseStick);ja.addEventListener('pointercancel',releaseStick);ja.addEventListener('lostpointercapture',releaseStick);
 for(const id of ['actionA','actionB','actionC']){
   const el=$(id);
-  el.addEventListener('pointerdown',e=>{e.preventDefault();if(el.disabled)return;el.setPointerCapture(e.pointerId);el.classList.add('pressed');if(id==='actionA')actionA();else if(id==='actionC'){if(match.phase==='conversion')stopConversion();else if(match.beginKick(directionInput()))kickPointer=e.pointerId;}else{buttonPointer=e.pointerId;input.sprint=true;beginB();}});
+  el.addEventListener('pointerdown',e=>{e.preventDefault();if(el.disabled)return;el.setPointerCapture(e.pointerId);el.classList.add('pressed');if(id==='actionA')actionA();else if(id==='actionC'){if(match.phase==='conversion')stopConversion();else if(match.beginKick(directionInput()))kickPointer=e.pointerId;}else if(match.phase==='scrum'){actionB();}else{buttonPointer=e.pointerId;input.sprint=true;beginB();}});
   const up=e=>{el.classList.remove('pressed');if(id==='actionC'&&e.pointerId===kickPointer){kickPointer=null;if(e.type==='pointerup'&&!paused){match.updateKickAim(0,directionInput());match.releaseKick();}else match.cancelKick();}if(id==='actionB'&&e.pointerId===buttonPointer){input.sprint=false;buttonPointer=null;match.releaseSpecial(e.type!=='pointerup'||paused);}};
   el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('lostpointercapture',up);
   // Keyboard/screen-reader activation has no pointerdown.
@@ -147,7 +147,7 @@ window.addEventListener('keydown',e=>{
   if(match.phase==='conversion'){
     if(['Space','KeyL','KeyC','Enter'].includes(e.code)){e.preventDefault();if(!e.repeat)stopConversion();}return;
   }
-  if(!e.repeat){if(e.code==='KeyJ')actionA();if(e.code==='Space'||e.code==='KeyK')beginB();if(e.code==='KeyL')match.beginKick(directionInput());}keys.add(e.code);
+  if(!e.repeat){if(e.code==='KeyJ')actionA();if(e.code==='Space'||e.code==='KeyK'){if(match.phase==='scrum')actionB();else beginB();}if(e.code==='KeyL')match.beginKick(directionInput());}keys.add(e.code);
 });
 window.addEventListener('keyup',e=>{keys.delete(e.code);if((e.code==='Space'||e.code==='KeyK')&&!keys.has('Space')&&!keys.has('KeyK'))match.releaseSpecial(paused);if(e.code==='KeyL'&&!paused){match.updateKickAim(0,directionInput());match.releaseKick();}});
 window.addEventListener('blur',()=>{releaseControls();pause();});
@@ -176,16 +176,13 @@ function updateConversion(){
   if(c.team===1&&['power','accuracy'].includes(c.stage)){instruction='L’Irlanda prepara la conversione.';button='CALCIA LA CPU';tip='ATTENDI IL TIRO AVVERSARIO';}
   setText('conversionInstruction',instruction);setText('conversionStop',button);setText('conversionTip',tip);setText('conversionBadge',badge);
 }
-const scrumPush=$('scrumPush');
-scrumPush.addEventListener('pointerdown',e=>{e.preventDefault();if(paused||match.phase!=='scrum'||match.scrum.feed!==0)return;scrumPointer=e.pointerId;scrumPush.setPointerCapture(e.pointerId);});
-for(const type of ['pointerup','pointercancel','lostpointercapture'])scrumPush.addEventListener(type,e=>{if(e.pointerId===scrumPointer)scrumPointer=null;});
-for(const type of ['keydown','keyup'])scrumPush.addEventListener(type,e=>{if(e.code==='Enter'){e.preventDefault();if(type==='keydown'&&!paused&&match.phase==='scrum'&&match.scrum.feed===0)scrumPointer='keyboard';else scrumPointer=null;}});
-scrumPush.addEventListener('blur',()=>{scrumPointer=null;});
 function updateScrum(){
   const s=match.phase==='scrum'?match.scrum:null;$('scrumPanel').hidden=!s;$('pitchView').classList[s?'add':'remove']('scrum-view');if(!s)return;
   setText('scrumTitle','MISCHIA · '+Math.max(0,s.duration-s.elapsed).toFixed(1)+'s');
-  scrumPush.hidden=s.feed===1;setText('scrumPush',s.pushing?'STAI SPINGENDO!':'TIENI PREMUTO · SPINGI');scrumPush.disabled=paused||s.feed===1;
-  setText('scrumInstructions',s.feed===0?'JOYSTICK: SCEGLI IL LATO · TIENI B / SPAZIO':'DIFESA AUTOMATICA · NESSUN COMANDO RICHIESTO');
+  $('scrumNeedle').style.left=(s.needle*100)+'%';
+  const feedback=s.lastAction&&s.elapsed-s.lastActionAt<.48?(s.lastAction==='win'?'SPINTA!':'FUORI TEMPO'):'MIRA '+Math.round(s.needle*100)+'%';
+  setText('scrumMeterValue',s.feed===1?'AUTOMATICA':feedback);
+  setText('scrumInstructions',s.feed===0?'JOYSTICK: USCITA · PREMI B / SPAZIO NEL VERDE':'DIFESA AUTOMATICA · NESSUN COMANDO RICHIESTO');
   setText('scrumSide',s.feed===1?'INTRODUCE L’IRLANDA · PREPARATI A DIFENDERE':s.side<0?'← USCITA A SINISTRA':'USCITA A DESTRA →');
   $('scrumBalance').style.transform='scaleX('+s.balance+')';
 }
@@ -200,7 +197,7 @@ function frame(now){
   if(!paused&&match.state==='playing'){
     input.x=stickX+(keys.has('ArrowRight')||keys.has('KeyD')?1:0)-(keys.has('ArrowLeft')||keys.has('KeyA')?1:0);
     input.y=stickY+(keys.has('ArrowDown')||keys.has('KeyS')?1:0)-(keys.has('ArrowUp')||keys.has('KeyW')?1:0);
-    const held=input.sprint;input.sprint=buttonPointer!==null||scrumPointer!==null||keys.has('Space')||keys.has('KeyK');accumulator+=dt;
+    const held=input.sprint;input.sprint=buttonPointer!==null||keys.has('Space')||keys.has('KeyK');accumulator+=dt;
     while(accumulator>=STEP){match.step(STEP,input);accumulator-=STEP;}
     input.sprint=held;consumeEvents();
   }else accumulator=0;

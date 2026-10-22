@@ -429,16 +429,15 @@ export class Match{
     this.cancelKick();
     const c=this.carrier,x=clamp(c.x,120,360),y=clamp(c.y,175,705);
     this.phase='scrum';this.ball=null;this.contact=null;this.tackles=0;
-    this.scrum={x,y,feed,elapsed:0,duration:2,balance:feed===0?.68:.32,side:1,pushing:false};
+    this.scrum={x,y,feed,elapsed:0,duration:2,balance:feed===0?.68:.32,side:1,needle:0,lastDuelAt:-1,lastAction:'',lastActionAt:-1};
     for(const p of this.players){p.down=p.charge=p.dive=p.burst=0;p.vx=p.vy=0;p.px=p.x;p.py=p.y;}
     this.emit('scrumStart');
   }
   stepScrum(dt,input){
-    const s=this.scrum;s.elapsed+=dt;s.pushing=s.feed===1?true:!!input.sprint;
+    const s=this.scrum;s.elapsed+=dt;s.needle=1-Math.abs(1-(s.elapsed*1.7%2));
     if(s.feed===0&&Math.abs(input.x||0)>.25)s.side=Math.sign(input.x);
-    const strength=this.players.slice(0,3).reduce((sum,p)=>sum+p.energy,0)/300;
     const cpu={easy:.08,normal:.10,hard:.12}[this.difficulty]||.1;
-    s.balance=clamp(s.balance+((s.pushing?(s.feed===1?.12:.24)*strength:0)-cpu)*dt,.02,.98);
+    s.balance=clamp(s.balance-cpu*dt,.02,.98);
     const displacement=(s.balance-.5)*24;
     for(const p of this.players){
       p.px=p.x;p.py=p.y;const d=this.dir(p.team),pack=p.slot<3;
@@ -446,7 +445,7 @@ export class Match{
       const ty=clamp(s.y-d*(pack?13:65+(p.slot-3)*12)+displacement*this.dir(0),FIELD.top+10,FIELD.bottom-10);
       const blend=1-Math.exp(-dt*9);p.x+=(tx-p.x)*blend;p.y+=(ty-p.y)*blend;
       p.vx=(p.x-p.px)/dt;p.vy=(p.y-p.py)/dt;p.moveSpeed=dt>0?Math.hypot(p.x-p.px,p.y-p.py)/dt:0;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;
-      p.facing=d;if(pack&&p.team===0&&s.pushing)this.spendEnergy(p,dt*12);
+      p.facing=d;
     }
     if(s.elapsed>=s.duration){
       const team=s.balance>=.5?0:1,side=team===0?s.side:(this.players.filter(p=>p.team===0).reduce((sum,p)=>sum+p.x,0)/7>s.x?-1:1);
@@ -463,6 +462,18 @@ export class Match{
       this.emit('scrumEnd',team===0?'MISCHIA VINTA!':'PALLA ALL’IRLANDA',team===0?(side<0?'ESCI A SINISTRA':'ESCI A DESTRA'):'TORNA IN DIFESA');
       if(this.time<=0)this.endHalf();
     }
+  }
+  scrumAction(){
+    const s=this.scrum;
+    if(this.state!=='playing'||this.phase!=='scrum'||!s||s.feed!==0||s.elapsed<.18||s.elapsed-s.lastDuelAt<.28)return false;
+    s.lastDuelAt=s.elapsed;
+    const success=s.needle>=.38&&s.needle<=.62,pack=this.players.slice(0,3);
+    const strength=pack.reduce((sum,p)=>sum+clamp(p.energy/p.profile.stamina,0,1),0)/3;
+    s.balance=clamp(s.balance+(success?.22:-.1)*strength,.02,.98);
+    for(const p of pack)this.spendEnergy(p,success?4:2);
+    s.lastAction=success?'win':'miss';s.lastActionAt=s.elapsed;
+    this.emit(success?'scrumWin':'scrumMiss',success?'SPINTA!':'FUORI TEMPO',success?'DUELLO VINTO':'RIPROVA NEL VERDE');
+    return success;
   }
   // Presentation only: no speed bonus or change to collision/possession rules.
   breakawayIntensity(){
