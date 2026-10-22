@@ -88,7 +88,7 @@ function updateHud(){
   $('energyLabel').textContent=(p.exhausted?'RECUPERO ':tired?'POCA ENERGIA ':'ENERGIA ')+Math.round(p.energy)+'/'+p.profile.stamina;
   $('stamina').style.background=p.energy<12||p.exhausted?'#ef947f':tired?'#f4c36c':'#d0e789';
   $('actionB').classList[p.cd>0||tired?'add':'remove']('cooling');
-  $('actionC').disabled=paused||match.state!=='playing'||!['live','kickoff'].includes(match.phase)||match.possession!==0||!!match.ball||match.carrier.kickCd>0||match.carrier.energy<12;
+  $('actionC').disabled=paused||match.state!=='playing'||!['live','kickoff'].includes(match.phase)||match.possession!==0||!!match.ball||(match.phase==='live'&&match.carrier.kickCd>0)||match.carrier.energy<12;
 }
 function start(){
   releaseControls();audioReady();match.reset({seconds:Number($('duration').value),difficulty:$('difficulty').value,scrums:$('scrums').value==='on'});paused=false;

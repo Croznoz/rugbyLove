@@ -598,7 +598,10 @@ export class Match{
       c.resultTime-=dt;if(c.resultTime>0)return;
       this.conversion=null;this.phase='live';this.emit('conversionEnd');
       if(this.time<=0){this.endHalf();return;}
-      this.lineup(this.nextTeam);this.launchKickoff();return;
+      this.lineup(this.nextTeam);
+      if(this.nextTeam===0){this.phase='kickoff';this.phaseTime=0;this.emit('kickoff','TOCCA A TE','TIENI CALCIA · MIRA E RILASCIA');}
+      else this.launchKickoff();
+      return;
     }
     if(c.stage==='flight'){
       c.flightTime+=dt;

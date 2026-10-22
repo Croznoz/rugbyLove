@@ -195,3 +195,19 @@ test('keyboard kickoff holds time, steers, cancels and releases once',()=>{
  dispatch(windowEvents,'keyup',{code:'KeyL'});dispatch(windowEvents,'keyup',{code:'KeyD'});
  assert.equal(active.ball.tx,target.tx);assert.equal(active.ball.ty,target.ty);assert.equal(active.stats.kicks[0],1);
 });
+
+test('restart after conceding waits for touch or keyboard direction and power',()=>{
+ for(const touch of [true,false]){
+  start();active.tryScored(1);active.beginConversion();active.resolveConversion(true);frame(115);
+  assert.equal(active.phase,'kickoff');assert.equal(active.ball,null);assert.equal(el('actionC').disabled,false);
+  const time=active.time;
+  if(touch){dispatch('joystickArea','pointerdown',{pointerId:301,clientX:100,clientY:60});dispatch('actionC','pointerdown',{pointerId:302});}
+  else{dispatch(windowEvents,'keydown',{code:'KeyD',repeat:false});dispatch(windowEvents,'keydown',{code:'KeyL',repeat:false});}
+  frame(40);assert.ok(active.kickAim.power>.4);assert.ok(active.kickAim.x>0);assert.equal(active.time,time);
+  const target=active.kickTarget(active.kickAim,active.kickAim.power);
+  if(touch){dispatch('actionC','pointerup',{pointerId:302});dispatch('joystickArea','pointerup',{pointerId:301});}
+  else{dispatch(windowEvents,'keyup',{code:'KeyL'});dispatch(windowEvents,'keyup',{code:'KeyD'});}
+  assert.equal(active.ball.kickoff,true);assert.equal(active.ball.tx,target.tx);assert.equal(active.ball.ty,target.ty);
+  assert.equal(active.stats.kicks[0],1);
+ }
+});

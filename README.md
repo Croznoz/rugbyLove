@@ -134,7 +134,7 @@ Le modifiche locali non lo aggiornano automaticamente. Non sono incluse credenzi
 cache o dipendenze installate, né la cronologia Git.
 
 Su smartphone con puntatore touch i giocatori sono ingranditi del 10%; desktop invariato.
-Il calcio d’inizio della tua squadra attende CALCIA/L: tieni, orienta e rilascia per scegliere direzione e potenza. La battuta avversaria resta automatica.
+Il calcio d’inizio della tua squadra, anche dopo una meta subita, attende CALCIA/L: tieni, orienta e rilascia per scegliere direzione e potenza. La battuta avversaria resta automatica.
 
 La mischia offensiva attende SPINGI (B, K o spazio): la prima pressione avvia il richiamo di 3 secondi, seguito dal duello di 4 secondi. Durante l’attesa tempo e bilanciamento restano fermi; la difesa resta automatica.
 
