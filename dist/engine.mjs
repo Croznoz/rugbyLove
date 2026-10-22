@@ -429,15 +429,19 @@ export class Match{
     this.cancelKick();
     const c=this.carrier,x=clamp(c.x,120,360),y=clamp(c.y,175,705);
     this.phase='scrum';this.ball=null;this.contact=null;this.tackles=0;
-    this.scrum={x,y,feed,elapsed:0,duration:2,balance:feed===0?.68:.32,side:1,needle:0,lastDuelAt:-1,lastAction:'',lastActionAt:-1};
+    this.scrum={x,y,feed,elapsed:0,duration:7,balance:feed===0?.68:.32,side:1,needle:0,sweep:0,speed:.72,lastDuelAt:-1,lastAction:'',lastActionAt:-1};
     for(const p of this.players){p.down=p.charge=p.dive=p.burst=0;p.vx=p.vy=0;p.px=p.x;p.py=p.y;}
     this.emit('scrumStart');
   }
   stepScrum(dt,input){
-    const s=this.scrum;s.elapsed+=dt;s.needle=1-Math.abs(1-(Math.max(0,s.elapsed-1)*1.36%2));
+    const s=this.scrum;s.elapsed+=dt;
+    const duelElapsed=Math.max(0,s.elapsed-3);
+    s.speed=.72+duelElapsed*.08;
+    if(duelElapsed>0)s.sweep+=s.speed*dt;
+    s.needle=1-Math.abs(1-s.sweep%2);
     if(s.feed===0&&Math.abs(input.x||0)>.25)s.side=Math.sign(input.x);
     const cpu={easy:.08,normal:.10,hard:.12}[this.difficulty]||.1;
-    s.balance=clamp(s.balance-cpu*dt,.02,.98);
+    s.balance=clamp(s.balance-cpu*(2/s.duration)*dt,.02,.98);
     const displacement=(s.balance-.5)*24;
     for(const p of this.players){
       p.px=p.x;p.py=p.y;const d=this.dir(p.team),pack=p.slot<3;
@@ -465,7 +469,7 @@ export class Match{
   }
   scrumAction(){
     const s=this.scrum;
-    if(this.state!=='playing'||this.phase!=='scrum'||!s||s.feed!==0||s.elapsed<1||s.elapsed-s.lastDuelAt<.28)return false;
+    if(this.state!=='playing'||this.phase!=='scrum'||!s||s.feed!==0||s.elapsed<3||s.elapsed-s.lastDuelAt<.28)return false;
     s.lastDuelAt=s.elapsed;
     const success=s.needle>=.38&&s.needle<=.62,pack=this.players.slice(0,3);
     const strength=pack.reduce((sum,p)=>sum+clamp(p.energy/p.profile.stamina,0,1),0)/3;
