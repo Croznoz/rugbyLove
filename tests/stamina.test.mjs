@@ -42,7 +42,7 @@ test('actual long runs lose energy; rest restores it and exhaustion slows moveme
 });
 test('fatigue follows simulation time during kick aim and freezes on pause',()=>{
  const slow=live(),normal=live();for(const m of [slow,normal]){m.carrier.runLoad=6;m.carrier.moveSpeed=78;}
- slow.beginKick();tick(slow,1,{x:0,y:-1});tick(normal,.25,{x:0,y:-1});
+ slow.beginKick();tick(slow,1,{x:0,y:-1});tick(normal,.35,{x:0,y:-1});
  assert.ok(Math.abs(slow.carrier.energy-normal.carrier.energy)<.1);
  assert.ok(Math.abs(slow.carrier.runLoad-normal.carrier.runLoad)<.02);
  const load=slow.carrier.runLoad,energy=slow.carrier.energy;slow.state='paused';tick(slow,3);

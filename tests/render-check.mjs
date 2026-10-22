@@ -11,6 +11,7 @@ const {Renderer}=await import('../dist/render.mjs');
 const output=fileURLToPath(new URL('../qa/',import.meta.url));
 await mkdir(output,{recursive:true});
 for(const [label,w,h] of [['desktop',1100,480],['mobile',358,470],['landscape',620,290],['charge',358,470],['dive',358,470],['kick',358,470],['touchline',358,470],['stamina-medium',358,470],['stamina-low',358,470],['stamina-empty',358,470],['dominant',358,470],['perfect-ready',358,470],['breakaway',358,470],['try-party',358,470],['one-two',358,470],['switch-target',358,470],['grubber',358,470],['grubber-aim',358,470]]){
+ window.innerWidth=w;window.innerHeight=h;window.matchMedia=()=>({matches:label!=='desktop'});
  const canvas=createCanvas(w,h);canvas.getBoundingClientRect=()=>({width:w,height:h});
  const map=createCanvas(108,172),r=new Renderer(canvas,map),m=new Match();m.reset();m.phase='live';m.events=[];
  if(label==='one-two'){m.guard=999;m.passCooldown=0;for(const p of m.players.filter(p=>p.team===1)){p.y=180;p.py=180;}const c=m.carrier,r=m.players[1];c.x=260;c.y=550;r.x=330;r.y=580;r.vy=-65;m.throwBall(r);for(let i=0;i<160;i++)m.step(1/120,{x:0,y:-1});m.aim={x:c.x-r.x,y:c.y-r.y};}
@@ -25,6 +26,7 @@ for(const [label,w,h] of [['desktop',1100,480],['mobile',358,470],['landscape',6
  else if(label==='kick'){m.kick(.5);for(let i=0;i<60;i++)m.step(1/120);}
  else for(let i=0;i<140;i++)m.step(1/120,{x:-.4,y:-1});
  if(label.startsWith('stamina-'))m.controlled.energy=label==='stamina-medium'?45:label==='stamina-low'?20:0;
+ if(r.playerScale!==(label==='desktop'?1:1.1))throw new Error('Incorrect device player scale');
  r.draw(m,1,1);await writeFile(output+'/'+label+'-field.png',canvas.toBuffer('image/png'));
  console.log('Canvas rendered:',label,w,h);
 }

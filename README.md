@@ -47,7 +47,7 @@ Se la suite UI termina per limiti di memoria, esegui i singoli scenari con
 
 Joystick o WASD/frecce per muoversi. PASSA/J per passare o scegliere il difensore;
 SFONDA/PLACCA con spazio o K, pressione prolungata per scattare in attacco.
-Tieni CALCIA/L, orienta e rilascia. Durante la mira il mondo procede al 25%;
+Tieni CALCIA/L, orienta e rilascia. Durante la mira il mondo procede al 35%;
 la potenza raggiunge il massimo in 3 secondi reali. PASSA annulla.
 Escape/P mette in pausa. Le conversioni usano due pressioni per potenza e precisione.
 
@@ -132,3 +132,6 @@ Retro Rugby (lo ZIP ricevuto conteneva soltanto una cartella vuota).
 Il sito originale è https://rugby-retro-blitz.soundmouse16.chatgpt.site.
 Le modifiche locali non lo aggiornano automaticamente. Non sono incluse credenziali,
 cache o dipendenze installate, né la cronologia Git.
+
+Su smartphone con puntatore touch i giocatori sono ingranditi del 10%; desktop invariato.
+Il calcio d’inizio della tua squadra attende CALCIA/L: tieni, orienta e rilascia per scegliere direzione e potenza. La battuta avversaria resta automatica.

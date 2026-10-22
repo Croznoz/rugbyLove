@@ -30,8 +30,8 @@ const el=id=>elements.get(id);
 function dispatch(target,type,props={}){const e={type,preventDefault(){},target:el('pitch'),detail:1,...props};const handlers=typeof target==='string'?el(target).events:target;for(const fn of handlers[type]||[])fn(e);}
 function frame(n=1){for(let i=0;i<n;i++){now+=1000/60;const list=[...frames.values()];frames.clear();list.forEach(fn=>fn(now));}}
 // Most UI scenarios need settled possession; kickoff itself is tested separately.
-function start(opening=false){dispatch('start','click');active.guard=999;frame(132);if(!opening){active.lineup(0);active.stats.kicks=[0,0];active.carrier.kickCd=0;active.passCooldown=0;frame(7);}active.guard=999;}
-test('menu starts a match and initial countdown completes',()=>{assert.equal(active.state,'menu');start(true);assert.equal(active.ball.kickoff,true);assert.equal(active.state,'playing');assert.equal(active.phase,'live');assert.equal(el('menu').hidden,true);assert.equal(el('pause').disabled,false);});
+function start(opening=false){dispatch('start','click');active.guard=999;frame(132);if(!opening){active.phase='live';active.lineup(0);active.stats.kicks=[0,0];active.carrier.kickCd=0;active.passCooldown=0;frame(7);}active.guard=999;}
+test('menu starts a match and touch kickoff waits for aim and release',()=>{assert.equal(active.state,'menu');start(true);assert.equal(active.ball,null);dispatch('actionC','pointerdown',{pointerId:201});frame(30);assert.ok(active.kickAim);dispatch('actionC','pointerup',{pointerId:201});assert.equal(active.ball.kickoff,true);assert.equal(active.state,'playing');assert.equal(active.phase,'live');assert.equal(el('menu').hidden,true);assert.equal(el('pause').disabled,false);});
 test('help opens and can be dismissed',()=>{dispatch('quit','click');dispatch('help','click');assert.equal(el('helpContent').hidden,false);dispatch('closeHelp','click');assert.equal(el('helpContent').hidden,true);});
 test('joystick + sprint work simultaneously and cancel safely',()=>{start();const x=active.carrier.x;dispatch('joystickArea','pointerdown',{pointerId:1,clientX:100,clientY:60});dispatch('actionB','pointerdown',{pointerId:2});frame(25);assert.ok(active.carrier.x>x+20);assert.ok(active.controlled.energy<100);dispatch('joystickArea','pointercancel',{pointerId:1});dispatch('actionB','lostpointercapture',{pointerId:2});frame(20);assert.equal(el('stick').style.transform,'translate(0px,0px)');assert.equal(el('actionB').classList.contains('pressed'),false);assert.ok(Math.abs(active.controlled.vx)<1);});
 test('pointer-only controls do not double-trigger through touchstart',()=>{assert.ok(!el('actionA').events.touchstart);assert.ok(!el('actionB').events.touchstart);start();active.passCooldown=0;dispatch('actionA','pointerdown',{pointerId:3});const from=active.ball.from;dispatch('actionA','click',{detail:1});assert.equal(active.ball.from,from);dispatch('actionA','pointerup',{pointerId:3});});
@@ -181,4 +181,17 @@ test('touch tap and keyboard hold select grubber and high kick with matching lab
  start();dispatch(windowEvents,'keydown',{code:'KeyL',repeat:false});frame(22);
  assert.match(el('kickType').textContent,/CALCIO ALTO/);
  dispatch(windowEvents,'keyup',{code:'KeyL'});assert.equal(active.ball?.grubber,false);
+});
+
+test('keyboard kickoff holds time, steers, cancels and releases once',()=>{
+ start(true);const time=active.time;
+ dispatch(windowEvents,'keydown',{code:'KeyL',repeat:false});
+ dispatch(windowEvents,'keydown',{code:'KeyD',repeat:false});frame(35);
+ assert.ok(active.kickAim.x>0);assert.equal(active.time,time);
+ dispatch(windowEvents,'keydown',{code:'KeyJ',repeat:false});assert.equal(active.kickAim,null);
+ dispatch(windowEvents,'keyup',{code:'KeyJ'});dispatch(windowEvents,'keyup',{code:'KeyL'});assert.equal(active.ball,null);
+ dispatch(windowEvents,'keydown',{code:'KeyL',repeat:false});frame(35);
+ const target=active.kickTarget(active.kickAim,active.kickAim.power);
+ dispatch(windowEvents,'keyup',{code:'KeyL'});dispatch(windowEvents,'keyup',{code:'KeyD'});
+ assert.equal(active.ball.tx,target.tx);assert.equal(active.ball.ty,target.ty);assert.equal(active.stats.kicks[0],1);
 });

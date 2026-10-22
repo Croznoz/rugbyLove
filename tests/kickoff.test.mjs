@@ -29,7 +29,7 @@ test('opening kick crosses halfway before possession can be recovered',()=>{
  const m=new Match();m.reset();
  const d=m.dir(0);
  for(const p of m.players)assert.ok(p.team===0?(p.y-FIELD.height/2)*d<=0:(p.y-FIELD.height/2)*d>=71);
- assert.equal(m.pass(),false);tick(m,127);
+ assert.equal(m.pass(),false);tick(m,180);assert.equal(m.ball,null);assert.equal(m.phase,'kickoff');m.beginKick({x:.3,y:d});tick(m,60);m.releaseKick();
  assert.equal(m.phase,'live');assert.equal(m.ball.kind,'kick');assert.equal(m.ball.kickoff,true);
  assert.equal(m.ball.sy,FIELD.height/2);assert.ok((m.ball.ty-FIELD.height/2)*d>=71);assert.equal(m.stats.kicks[0],1);
  tick(m,40);assert.ok(m.loose,'ball stays airborne before reception');
@@ -39,6 +39,6 @@ test('opening kick crosses halfway before possession can be recovered',()=>{
 });
 test('second half starts with an opponent kick in the reversed direction',()=>{
  const m=new Match();m.reset();m.phase='halftime';m.phaseTime=.01;m.step(.02);
- assert.equal(m.half,2);assert.equal(m.ball.team,1);assert.equal(m.ball.sy,FIELD.height/2);
+ assert.equal(m.half,2);tick(m,127);assert.equal(m.ball.team,1);assert.equal(m.ball.sy,FIELD.height/2);
  assert.ok((m.ball.ty-FIELD.height/2)*m.dir(1)>71);assert.equal(m.stats.kicks[1],1);
 });

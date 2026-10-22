@@ -76,11 +76,11 @@ function updateHud(){
   $('controlHint').textContent=match.loose?'INSEGUI E RECUPERA.':match.possession===0?(match.phase==='contact'?'A ORA: LIBERA LA PALLA':'INDICA IL COMPAGNO · PREMI PASSA'):'TOCCA: PLACCA · TIENI: CONTIENI';
   $('actionA').setAttribute('aria-label',match.possession===0&&!match.loose?'Passa al compagno evidenziato':'Seleziona il difensore meglio posizionato');
   $('actionB').setAttribute('aria-label',match.loose?'Scatto: tieni premuto':match.possession===0?'Tocca per sfondare, orienta di lato per schivare; tieni per scattare':'Tocca e rilascia per placcare; tieni premuto per contenere');
-  if(match.kickAim){$('labelA').textContent='ANNULLA';$('actionB').disabled=true;$('controlHint').textContent=match.kickAim.power<=.32?'RILASCIA: RASOTERRA DA INSEGUIRE':'RILASCIA: CALCIO ALTO';}
+  if(match.kickAim){$('labelA').textContent='ANNULLA';$('actionB').disabled=true;$('controlHint').textContent=!match.kickAim.kickoff&&match.kickAim.power<=.32?'RILASCIA: RASOTERRA DA INSEGUIRE':'RILASCIA: CALCIO ALTO';}
   if(match.phase==='kickoff'){
     $('possession').textContent='CALCIO D’INIZIO';$('phase').textContent='BATTUTA DALLA METÀ CAMPO';
-    $('actionA').disabled=true;$('actionB').disabled=true;
-    $('controlHint').textContent='CALCIO AUTOMATICO · POI INSEGUI LA PALLA';
+    $('actionA').disabled=!match.kickAim;$('actionB').disabled=true;
+    $('controlHint').textContent=match.possession===0?'TIENI CALCIA · MIRA · RILASCIA PER BATTERE':'CALCIO AVVERSARIO · PREPARATI A RICEVERE';
   }
   const p=match.controlled;
   $('staminaTrack').style.width=(55*p.profile.stamina/100)+'px';
@@ -88,7 +88,7 @@ function updateHud(){
   $('energyLabel').textContent=(p.exhausted?'RECUPERO ':tired?'POCA ENERGIA ':'ENERGIA ')+Math.round(p.energy)+'/'+p.profile.stamina;
   $('stamina').style.background=p.energy<12||p.exhausted?'#ef947f':tired?'#f4c36c':'#d0e789';
   $('actionB').classList[p.cd>0||tired?'add':'remove']('cooling');
-  $('actionC').disabled=paused||match.state!=='playing'||match.phase!=='live'||match.possession!==0||!!match.ball||match.carrier.kickCd>0||match.carrier.energy<12;
+  $('actionC').disabled=paused||match.state!=='playing'||!['live','kickoff'].includes(match.phase)||match.possession!==0||!!match.ball||match.carrier.kickCd>0||match.carrier.energy<12;
 }
 function start(){
   releaseControls();audioReady();match.reset({seconds:Number($('duration').value),difficulty:$('difficulty').value,scrums:$('scrums').value==='on'});paused=false;
@@ -191,7 +191,7 @@ function updateScrum(){
 }
 function updateKick(){
   const a=match.kickAim;$('kickPanel').hidden=!a;if(!a)return;
-  setText('kickType',a.power<=.32?'RASOTERRA · MIRA E RILASCIA':'CALCIO ALTO · MIRA E RILASCIA');
+  setText('kickType',!a.kickoff&&a.power<=.32?'RASOTERRA · MIRA E RILASCIA':'CALCIO ALTO · MIRA E RILASCIA');
   $('kickPower').style.transform='scaleX('+a.power+')';
   setText('kickPowerValue',Math.round(a.power*100)+'%');
 }
