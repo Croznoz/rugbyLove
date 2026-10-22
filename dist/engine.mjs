@@ -1,4 +1,4 @@
-export const FIELD={width:720,height:1320,left:51,right:669,top:127.5,bottom:1192.5};
+export const FIELD={width:720,height:1320,left:51,right:669,top:127.5,bottom:1192.5,inGoalTop:45,inGoalBottom:1275};
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const CARRIER_PACE=.82;
@@ -278,15 +278,23 @@ export class Match{
     this.selected=p.team===0?p.id:this.nearest(0,p).id;this.guard=.75;this.passCooldown=.12;p.charge=0;p.dive=0;
     this.emit('recovery',p.team===0?'PALLA RECUPERATA!':'PALLA ALL’IRLANDA',p.team===0?'RIPARTI!':'TORNA IN DIFESA');
   }
+  scatterKickBounce(b){
+    // One random seed per ball; sample only on impact, never per frame.
+    b.bounceSeed??=Math.floor(Math.random()*4294967296);
+    b.bounceSeed=(Math.imul(b.bounceSeed,1664525)+1013904223)>>>0;
+    const angle=b.bounceSeed/4294967296*Math.PI*2,speed=Math.hypot(b.vx,b.vy);
+    b.vx=Math.cos(angle)*speed;b.vy=Math.sin(angle)*speed;
+  }
   startKickBounce(b){
     b.landed=true;b.t=b.duration;b.groundTime=0;b.z=0;b.bounceCount=0;b.rotation=b.rotation||0;
     const speed=Math.hypot(b.tx-b.sx,b.ty-b.sy)/Math.max(.1,b.duration),factor=b.grubber?.68:.4;
     b.vx=(b.tx-b.sx)/Math.max(.1,b.duration)*factor;b.vy=(b.ty-b.sy)/Math.max(.1,b.duration)*factor;
     b.vz=b.grubber?Math.min(18,7+speed*.025):Math.min(58,20+speed*.1);
+    this.scatterKickBounce(b);
   }
   stepKickBall(b,dt){
     // Small physics steps keep impact damping consistent across frame rates.
-    while(dt>0){const h=Math.min(dt,1/120);this.integrateKickBall(b,h);dt-=h;}
+    while(dt>0&&!b.out){const h=Math.min(dt,1/120);this.integrateKickBall(b,h);b.out=this.ballOutside(b);dt-=h;}
   }
   integrateKickBall(b,dt){
     if(!b.landed){
@@ -300,21 +308,29 @@ export class Match{
     b.groundTime+=dt;b.vz-=180*dt;b.z=Math.max(0,b.z+b.vz*dt);
     const onGround=b.z===0;
     if(onGround&&b.vz< -8){
-      const angle=Math.sin((b.bounceCount+1)*2.17+b.from*.73)*.28,vx=b.vx,vy=b.vy;
-      b.vx=(vx*Math.cos(angle)-vy*Math.sin(angle))*.72;b.vy=(vy*Math.cos(angle)+vx*Math.sin(angle))*.72;b.vz=-b.vz*(b.grubber?.25:.38);b.bounceCount++;
+      b.vx*=.72;b.vy*=.72;this.scatterKickBounce(b);
+      b.vz=-b.vz*(b.grubber?.25:.38);b.bounceCount++;
     }else if(onGround)b.vz=0;
     const drag=Math.exp(-(onGround?2.6:.16)*dt);b.vx*=drag;b.vy*=drag;
     if(Math.hypot(b.vx,b.vy)<3&&b.z<.5){b.vx=b.vy=b.vz=0;b.z=0;}
     b.x+=b.vx*dt;b.y+=b.vy*dt;
     b.rotation=(b.rotation||0)+Math.hypot(b.vx,b.vy)*dt*.08;
-    const left=FIELD.left+6,right=FIELD.right-6,top=FIELD.top-110,bottom=FIELD.bottom+110;
-    if(b.x<left){b.x=left;b.vx=Math.abs(b.vx)*.58;b.bounceCount++;}
-    else if(b.x>right){b.x=right;b.vx=-Math.abs(b.vx)*.58;b.bounceCount++;}
-    if(b.y<top){b.y=top;b.vy=Math.abs(b.vy)*.52;b.bounceCount++;}
-    else if(b.y>bottom){b.y=bottom;b.vy=-Math.abs(b.vy)*.52;b.bounceCount++;}
   }
+  ballOutside(b){
+    return b.x<FIELD.left||b.x>FIELD.right||b.y<FIELD.inGoalTop||b.y>FIELD.inGoalBottom;
+  }
+  restartBallOut(b){
+    // Arcade restart: the other team collects inside the pitch, without a lineout UI.
+    const team=1-b.team;
+    this.restart={team,x:clamp(b.x,FIELD.left+32,FIELD.right-32),y:clamp(b.y,FIELD.top+32,FIELD.bottom-32)};
+    this.restart.receiver=this.nearest(team,this.restart).id;
+    this.ball=null;this.contact=null;this.cancelKick();this.loopRun=null;this.tackles=0;
+    this.possession=team;this.phase='ruck';this.phaseTime=.42;
+    this.emit('out','PALLA FUORI','RIMESSA AUTOMATICA · '+(team===0?'ITALIA':'IRLANDA'));
+  }
+
   bestDefender(){
-    const focus=this.loose?{x:this.ball.tx,y:this.ball.ty,vx:0,vy:0}:this.ball?.kind==='pass'?this.players[this.ball.to]:this.carrier;
+    const focus=this.loose?{x:this.ball.landed?this.ball.x:this.ball.tx,y:this.ball.landed?this.ball.y:this.ball.ty,vx:0,vy:0}:this.ball?.kind==='pass'?this.players[this.ball.to]:this.carrier;
     const choices=this.players.filter(p=>p.team===0&&p.down<=0&&p.dive<=0&&(!this.loose||this.canChase(p)));
     const cost=p=>{
       if(this.loose)return distance(p,focus)/78;
@@ -336,7 +352,7 @@ export class Match{
   }
   switchPlayer(){
     if(this.state!=='playing'||this.phase!=='live'||(!this.loose&&this.possession===0))return;
-    const focus=this.loose?{x:this.ball.tx,y:this.ball.ty,vx:0,vy:0}:this.ball?.kind==='pass'?this.players[this.ball.to]:this.carrier;
+    const focus=this.loose?{x:this.ball.landed?this.ball.x:this.ball.tx,y:this.ball.landed?this.ball.y:this.ball.ty,vx:0,vy:0}:this.ball?.kind==='pass'?this.players[this.ball.to]:this.carrier;
     const allChoices=this.players.filter(p=>p.team===0&&p.down<=0&&p.dive<=0&&(!this.loose||this.canChase(p)));
     if(!allChoices.length)return;
     const cost=p=>{
@@ -457,7 +473,7 @@ export class Match{
       else target={x:p.x,y:r.y+this.dir(r.team)*48};
       const d=distance(p,target),speed=Math.min(p===receiver?150:65,d/Math.max(dt,.001));
       p.vx=d>1?(target.x-p.x)/d*speed:0;p.vy=d>1?(target.y-p.y)/d*speed:0;
-      p.x=clamp(p.x+p.vx*dt,FIELD.left+8,FIELD.right-8);p.y=clamp(p.y+p.vy*dt,FIELD.top-22,FIELD.bottom+22);
+      p.x=clamp(p.x+p.vx*dt,FIELD.left+8,FIELD.right-8);p.y=clamp(p.y+p.vy*dt,FIELD.inGoalTop+8,FIELD.inGoalBottom-8);
       p.moveSpeed=dt>0?Math.hypot(p.x-p.px,p.y-p.py)/dt:0;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;
     }
     this.phaseTime-=dt;
@@ -472,19 +488,20 @@ export class Match{
     this.cancelKick();
     const c=this.carrier,x=clamp(c.x,120,360),y=clamp(c.y,175,705);
     this.phase='scrum';this.ball=null;this.contact=null;this.tackles=0;
-    this.scrum={x,y,feed,elapsed:0,duration:7,balance:feed===0?.68:.32,side:1,needle:0,sweep:0,speed:.72,lastDuelAt:-1,lastAction:'',lastActionAt:-1};
+    this.scrum={x,y,feed,started:false,elapsed:0,duration:7,balance:feed===0?.68:.32,side:1,needle:0,sweep:0,speed:.72,lastDuelAt:-1,lastAction:'',lastActionAt:-1};
     for(const p of this.players){p.down=p.charge=p.dive=p.burst=0;p.vx=p.vy=0;p.px=p.x;p.py=p.y;}
     this.emit('scrumStart');
   }
   stepScrum(dt,input){
-    const s=this.scrum;s.elapsed+=dt;
+    const s=this.scrum,waiting=s.feed===0&&!s.started;
+    if(!waiting)s.elapsed+=dt;
     const duelElapsed=Math.max(0,s.elapsed-3);
     s.speed=.72+duelElapsed*.08;
     if(duelElapsed>0)s.sweep+=s.speed*dt;
     s.needle=1-Math.abs(1-s.sweep%2);
     if(s.feed===0&&Math.abs(input.x||0)>.25)s.side=Math.sign(input.x);
     const cpu={easy:.08,normal:.10,hard:.12}[this.difficulty]||.1;
-    s.balance=clamp(s.balance-cpu*(2/s.duration)*dt,.02,.98);
+    if(!waiting)s.balance=clamp(s.balance-cpu*(2/s.duration)*dt,.02,.98);
     const displacement=(s.balance-.5)*24;
     for(const p of this.players){
       p.px=p.x;p.py=p.y;const d=this.dir(p.team),pack=p.slot<3;
@@ -512,7 +529,9 @@ export class Match{
   }
   scrumAction(){
     const s=this.scrum;
-    if(this.state!=='playing'||this.phase!=='scrum'||!s||s.feed!==0||s.elapsed<3||s.elapsed-s.lastDuelAt<.28)return false;
+    if(this.state!=='playing'||this.phase!=='scrum'||!s||s.feed!==0)return false;
+    if(!s.started){s.started=true;return true;}
+    if(s.elapsed<3||s.elapsed-s.lastDuelAt<.28)return false;
     s.lastDuelAt=s.elapsed;
     const success=s.needle>=.38&&s.needle<=.62,pack=this.players.slice(0,3);
     const strength=pack.reduce((sum,p)=>sum+clamp(p.energy/p.profile.stamina,0,1),0)/3;
@@ -705,14 +724,16 @@ export class Match{
       if(!this.ball&&p.id===this.carrierId&&p.dive<=0&&p.evade<=0)speed*=CARRIER_PACE;
       const norm=Math.hypot(dx,dy);if(norm>1){dx/=norm;dy/=norm;}
       const blend=p.dive>0?1:1-Math.exp(-dt*18);p.vx+=(dx*speed-p.vx)*blend;p.vy+=(dy*speed-p.vy)*blend;
-      p.x=clamp(p.x+p.vx*dt,FIELD.left+8,FIELD.right-8);p.y=clamp(p.y+p.vy*dt,FIELD.top-22,FIELD.bottom+22);p.moveSpeed=dt>0?Math.hypot(p.x-p.px,p.y-p.py)/dt:0;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;if(Math.abs(p.vy)>3)p.facing=Math.sign(p.vy);
+      p.x=clamp(p.x+p.vx*dt,FIELD.left+8,FIELD.right-8);p.y=clamp(p.y+p.vy*dt,FIELD.inGoalTop+8,FIELD.inGoalBottom-8);p.moveSpeed=dt>0?Math.hypot(p.x-p.px,p.y-p.py)/dt:0;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;if(Math.abs(p.vy)>3)p.facing=Math.sign(p.vy);
     }
     // Soft separation keeps support runners readable without a physics engine.
-    for(let i=0;i<14;i++)for(let j=i+1;j<14;j++){const a=this.players[i],b=this.players[j];if(a.team!==b.team||a.down||b.down)continue;const d=distance(a,b);if(d<16&&d>.01){const n=(16-d)*.5,dx=(a.x-b.x)/d*n,dy=(a.y-b.y)/d*n;a.x=clamp(a.x+dx,FIELD.left+8,FIELD.right-8);b.x=clamp(b.x-dx,FIELD.left+8,FIELD.right-8);a.y=clamp(a.y+dy,FIELD.top-22,FIELD.bottom+22);b.y=clamp(b.y-dy,FIELD.top-22,FIELD.bottom+22);}}
+    for(let i=0;i<14;i++)for(let j=i+1;j<14;j++){const a=this.players[i],b=this.players[j];if(a.team!==b.team||a.down||b.down)continue;const d=distance(a,b);if(d<16&&d>.01){const n=(16-d)*.5,dx=(a.x-b.x)/d*n,dy=(a.y-b.y)/d*n;a.x=clamp(a.x+dx,FIELD.left+8,FIELD.right-8);b.x=clamp(b.x-dx,FIELD.left+8,FIELD.right-8);a.y=clamp(a.y+dy,FIELD.inGoalTop+8,FIELD.inGoalBottom-8);b.y=clamp(b.y-dy,FIELD.inGoalTop+8,FIELD.inGoalBottom-8);}}
     if(this.loose){
       const b=this.ball;
+      if(b.out||this.ballOutside(b)){this.restartBallOut(b);return;}
       if(b.kind==='kick')this.stepKickBall(b,dt);
       else{b.t+=dt;const ratio=clamp(b.t/b.duration,0,1);b.x=b.sx+(b.tx-b.sx)*ratio;b.y=b.sy+(b.ty-b.sy)*ratio;if(ratio>=1)b.groundTime+=dt;}
+      if(b.out||this.ballOutside(b)){this.restartBallOut(b);return;}
       const receiver=this.players.filter(p=>p.down<=0&&p.dive<=0&&this.canChase(p)&&(b.kind!=='kick'||(b.landed&&b.z<12)||(!b.landed&&b.t/b.duration>.8&&b.z<22))&&distance(p,b)<16).sort((p,q)=>distance(p,b)-distance(q,b))[0];
       if(receiver)this.recoverKick(receiver);
     }else if(this.ball){

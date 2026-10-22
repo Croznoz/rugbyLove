@@ -135,3 +135,7 @@ cache o dipendenze installate, né la cronologia Git.
 
 Su smartphone con puntatore touch i giocatori sono ingranditi del 10%; desktop invariato.
 Il calcio d’inizio della tua squadra attende CALCIA/L: tieni, orienta e rilascia per scegliere direzione e potenza. La battuta avversaria resta automatica.
+
+La mischia offensiva attende SPINGI (B, K o spazio): la prima pressione avvia il richiamo di 3 secondi, seguito dal duello di 4 secondi. Durante l’attesa tempo e bilanciamento restano fermi; la difesa resta automatica.
+
+I giocatori possono recuperare il pallone in tutta l’area di meta. Se una palla libera supera la linea laterale o il fondo dell’area di meta, una rimessa automatica arcade assegna il possesso all’altra squadra dentro il campo; le linee esterne non fanno rimbalzare il pallone.

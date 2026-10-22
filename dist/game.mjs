@@ -63,9 +63,9 @@ function updateHud(){
   if(match.phase==='scrum'){
     $('possession').textContent='MISCHIA ARCADE';$('phase').textContent='INTRODUCE '+(match.scrum.feed===0?'ITALIA':'IRLANDA');
     $('actionA').disabled=true;$('actionB').disabled=paused||match.scrum.feed===1;$('actionC').disabled=true;
-    $('labelA').textContent='—';$('labelB').textContent=match.scrum.feed===0?'DUELLA':'AUTO';$('labelC').textContent='—';
-    $('actionB').classList.remove('cooling');$('actionB').setAttribute('aria-label','Premi quando la lancetta è nel verde per duellare in mischia');
-    $('controlHint').textContent=match.scrum.feed===0?'PREMI B NEL VERDE · JOYSTICK: USCITA':'MISCHIA DIFENSIVA AUTOMATICA';return;
+    $('labelA').textContent='—';$('labelB').textContent=match.scrum.feed===0?(match.scrum.started?'DUELLA':'SPINGI'):'AUTO';$('labelC').textContent='—';
+    $('actionB').classList.remove('cooling');$('actionB').setAttribute('aria-label',match.scrum.started?'Premi quando la lancetta è nel verde per duellare in mischia':'Premi per iniziare la mischia');
+    $('controlHint').textContent=match.scrum.feed===0?(match.scrum.started?'PREMI B NEL VERDE · JOYSTICK: USCITA':'PREMI SPINGI PER INIZIARE'):'MISCHIA DIFENSIVA AUTOMATICA';return;
   }
   $('actionA').disabled=paused||(match.phase==='contact'&&match.possession!==0);$('actionB').disabled=match.phase==='contact';$('labelC').textContent=match.kickAim?'RILASCIA':'CALCIA';$('actionC').setAttribute('aria-label','Tieni premuto, mira col joystick e rilascia per calciare');
   $('possession').textContent=match.loose?'◌ PALLA CONTESA':match.possession===0?'● PALLA AGLI AZZURRI':'● PALLA ALL’IRLANDA';
@@ -178,14 +178,15 @@ function updateConversion(){
 }
 function updateScrum(){
   const s=match.phase==='scrum'?match.scrum:null;$('scrumPanel').hidden=!s;$('pitchView').classList[s?'add':'remove']('scrum-view');if(!s)return;
-  setText('scrumTitle','MISCHIA · '+Math.max(0,s.duration-s.elapsed).toFixed(1)+'s');
-  const ready=s.feed===0&&s.elapsed>=3;
-  setText('scrumCallout','MISCHIA · SPINGI!!');
+  const waiting=s.feed===0&&!s.started;
+  setText('scrumTitle',waiting?'MISCHIA · PRONTO?':'MISCHIA · '+Math.max(0,s.duration-s.elapsed).toFixed(1)+'s');
+  const ready=s.feed===0&&s.started&&s.elapsed>=3;
+  setText('scrumCallout',waiting?'MISCHIA · PREMI SPINGI':'MISCHIA · SPINGI!!');
   $('scrumCallout').hidden=ready||s.feed===1;$('scrumTiming').hidden=!ready;
   $('scrumNeedle').style.left=(s.needle*100)+'%';
   const feedback=s.lastAction&&s.elapsed-s.lastActionAt<.48?(s.lastAction==='win'?'SPINTA!':'FUORI TEMPO'):'MIRA '+Math.round(s.needle*100)+'%';
   setText('scrumMeterValue',s.feed===1?'AUTOMATICA':feedback);
-  setText('scrumInstructions',s.feed===0?'JOYSTICK: USCITA · PREMI B / SPAZIO NEL VERDE':'DIFESA AUTOMATICA · NESSUN COMANDO RICHIESTO');
+  setText('scrumInstructions',s.feed===0?(waiting?'PREMI SPINGI / K / SPAZIO PER INIZIARE':'JOYSTICK: USCITA · PREMI B / SPAZIO NEL VERDE'):'DIFESA AUTOMATICA · NESSUN COMANDO RICHIESTO');
   setText('scrumSide',s.feed===1?'INTRODUCE L’IRLANDA · PREPARATI A DIFENDERE':s.side<0?'← USCITA A SINISTRA':'USCITA A DESTRA →');
   $('scrumBalance').style.transform='scaleX('+s.balance+')';
 }
