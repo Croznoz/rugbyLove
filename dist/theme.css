@@ -24,3 +24,32 @@ body{font-synthesis:none}button,select{font-synthesis:none}button:focus-visible,
 @media(max-width:700px){.match-bar{font-size:7px}.match-time{font-size:7px}.selected-info b{font-size:7px}.selected-info small{font-size:6px}.action span{font-size:9px}.settings label{font-size:7px}.settings select{font-size:9px}.scrum-setting{font-size:7px}.scrum-setting select{font-size:7px}.playing .team{font-size:10px}}
 @media(max-width:350px){.playing .match-bar{font-size:6px}.action span{font-size:8px}.playing .team{font-size:9px}.settings select{font-size:8px}.scrum-setting{font-size:6px}}
 @media(max-height:560px) and (orientation:landscape){.intro-card h1 br{display:initial}.settings select{font-size:7px}.scrum-setting{font-size:6px}.scrum-setting select{font-size:6px}.action span{font-size:8px}.playing .team{font-size:9px}}
+
+/* Countryside edition: soft colour fields, quiet panels and flat controls. */
+:root{--paper:#f0ebdc;--ink:#253e43;--muted:#6a8077;--lime:#e8bc86;--blue:#386d87;--border:#b7c3af;--sans:ui-sans-serif,system-ui,sans-serif}
+html,body{background:#eeeadd;background-image:none}
+.brand,.intro-card h1,.dialog h2{font-family:var(--sans);font-weight:600;letter-spacing:-.6px}
+.brand small{letter-spacing:4px}.crest{background:#f7f0df;border-color:#56776e;box-shadow:none}
+.console{border:1px solid #7b9487;box-shadow:0 12px 32px #35574b18}
+.scoreboard{background:#2d484b;border-bottom:1px solid #617d73}.score{text-shadow:none}.match-bar{background:#4d7067;border-bottom:0}
+.team-chip{background:#386d87;border-color:#6f98a6}.away .team-chip{background:#f2dfbd;border-color:#c6b79c}
+.pitch-view{background:#86a780}#pitch{image-rendering:auto}
+.direction,.selected-info{background:#2d484be8;border-color:#d9dfc3;box-shadow:none}
+.menu-layer{background:linear-gradient(90deg,transparent 20%,#2d484b22 50%,#2d484b88),url('assets/club-lowpoly.png') center/cover no-repeat}
+.intro-card{background:#2d484bf2;border:1px solid #cbd4bd;box-shadow:0 10px 30px #304f4420}
+.intro-card h1{font-size:32px;line-height:1.1;color:#f8f2df}.intro-card h1 em{color:#e8bc86}
+.intro-card p,.dialog p{font-family:var(--sans);color:#dce2ce}
+.primary{background:#e8bc86;border:1px solid #f4d9af;color:#2d484b;box-shadow:none;border-radius:3px}
+.primary:active{box-shadow:none;transform:translateY(1px)}
+.controller{background:#2d484b;border-color:#cbd4bd;box-shadow:none}
+.joystick{background:#45665f;border:1px solid #8da799;border-radius:50%;box-shadow:none}
+.joystick:before{border-radius:50%;border-color:#9eb3a3}.stick{border-radius:50%;background:#d5ddc4;border:1px solid #edf0da;box-shadow:0 4px 8px #213e3b30}
+.action,.action.a{background:#46788a;border:1px solid #8fb0b6;box-shadow:0 3px 0 #203c40;border-radius:10px}
+.action.b{background:#cc9876;border-color:#e6bea0;box-shadow:0 3px 0 #203c40}
+.action.c{background:#e4dec3;border-color:#f5eed7;box-shadow:0 3px 0 #203c40;color:#2d484b}
+.action.pressed{box-shadow:none;transform:translateY(3px)}
+.dialog,.conversion-panel,.scrum-panel,.kick-panel,#helpContent{background:#2d484bf5;border-color:#cbd4bd;box-shadow:none}
+.notice strong{background:#ebcea0;border:1px solid #fff0d2;box-shadow:none;color:#2d484b}
+.icon-button{background:#f6f0df;border:1px solid #92a591;box-shadow:none}
+@media(max-width:700px){.menu-layer{background:linear-gradient(180deg,transparent,#2d484b33 35%,#2d484bd9 80%),url('assets/club-lowpoly.png') 35% center/cover no-repeat}.intro-card h1{font-size:28px}}
+@media(max-height:560px) and (orientation:landscape){.intro-card h1{font-size:22px}.menu-layer{background:linear-gradient(90deg,transparent,#2d484b99),url('assets/club-lowpoly.png') center/cover no-repeat}}

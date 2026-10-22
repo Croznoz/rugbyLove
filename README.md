@@ -67,20 +67,22 @@ Quando il Potente è pronto e davanti al portatore a distanza utile, «PLACCA OR
 l’occasione: un tocco su PLACCA (o K/spazio) esegue il tuffo. Il placcaggio perfetto
 ha un fermo d’impatto di 65 ms, un’onda dorata e un suono dedicato quando l’audio è attivo.
 Entrambe le squadre possono recuperare automaticamente il pallone; nessun nuovo comando.
-Corsa normale, passaggi e tempi reali di caricamento restano uguali per tutti.
+Corsa normale e passaggi non dipendono dalla stamina. Con la palla in mano la
+velocità ordinaria cala leggermente (10%) per entrambe le squadre: un compagno
+senza palla o un difensore può guadagnare terreno. I tempi reali di caricamento
+restano uguali per tutti.
 
-## Stile visivo: Golden Hour
+## Stile visivo: paesaggio geometrico
 
-Direzione grafica ispirata all’immagine di riferimento fornita: blu notte, avorio,
-verde prato e luce ambrata. Giocatori slanciati con dettagli pixel, calzettoni alti,
-pantaloncini a contrasto e numeri bitmap 5×7 visibili davanti e dietro.
-La squadra di casa indossa blu notte e avorio; gli avversari avorio e pantaloncini scuri.
-Campo e tribune sono disegnati una volta; lo stadio in prospettiva delle conversioni
-viene memorizzato e rigenerato solo al cambio di dimensioni.
+Direzione ispirata ad Art of Rally: verdi salvia, avorio e terracotta, superfici
+pulite, alberi e colline sfaccettati, ombre diagonali. Giocatori a volumi semplici,
+divise blu e avorio, numeri bitmap leggibili e pallone chiaro.
+Campo e paesaggio sono disegnati una volta; lo sfondo delle conversioni viene
+memorizzato e rigenerato solo al cambio di dimensioni.
 
-- `dist/art.mjs`: palette condivisa e stadio pixel in prospettiva.
+- `dist/art.mjs`: palette condivisa e paesaggio delle conversioni.
 - `dist/theme.css`: interfaccia, tabellone e controlli nella nuova palette.
-- `dist/assets/club-sunset.png`: immagine di riferimento usata nel menu.
+- `dist/assets/club-lowpoly.png`: immagine originale del menu reinterpretata in stile low-poly.
 - `dist/assets/silkscreen-regular.ttf`: font incluso localmente, licenza in `SILKSCREEN-LICENSE.txt`.
 
 Non servono servizi font o dipendenze aggiuntive per giocare. Le verifiche visive

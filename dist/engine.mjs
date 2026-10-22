@@ -1,6 +1,7 @@
 export const FIELD={width:600,height:1100,left:42.5,right:557.5,top:106.25,bottom:993.75};
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const CARRIER_PACE=.90;
 // Fixed role profiles: appearance and action bonuses never alter normal running or passing.
 export const PROFILES=Object.freeze({
   powerful:Object.freeze({label:'POTENTE',stamina:90,width:1.15,height:1.08,sprint:1.28,agility:.95,charge:1.12,tackle:1.1,kick:1}),
@@ -156,7 +157,7 @@ export class Match{
     const old=this.defensePlan,eligible=this.players.filter(p=>p.team!==c.team&&p.down<=0);
     const anchor=eligible.find(p=>p.brace),anchorId=anchor?.id??-1;
     if(old&&old.anchorId===anchorId&&old.carrier===c.id&&old.until>this.elapsed&&eligible.some(p=>p.id===old.pressure))return old;
-    const dir=this.dir(c.team),cost=p=>distance(p,c)+((p.y-c.y)*dir<0?18:0);
+    const dir=this.dir(c.team),cost=p=>distance(p,c)+((p.y-c.y)*dir<0?18:0)+(p.slot===6?45:0);
     eligible.sort((a,b)=>cost(a)-cost(b));
     let pressure=eligible[0];
     const previous=eligible.find(p=>p.id===old?.pressure);
@@ -165,13 +166,19 @@ export class Match{
     if(pressure?.team===0&&pressure.id===this.selected&&distance(pressure,c)>75)pressure=eligible.find(p=>p.id!==this.selected)||pressure;
     if(anchor)pressure=anchor;
     const remaining=eligible.filter(p=>p.id!==pressure?.id);
-    const cover=[...remaining].sort((a,b)=>(b.y-a.y)*dir)[0];
-    const markers=remaining.filter(p=>p.id!==cover?.id).sort((a,b)=>a.x-b.x);
-    const threats=this.players.filter(p=>p.team===c.team&&p.id!==c.id&&p.down<=0).sort((a,b)=>distance(a,c)-distance(b,c)).slice(0,markers.length).sort((a,b)=>a.x-b.x);
+    // Preserve role lanes even when the attack bunches up or moves to touch.
+    // Only the pressure defender leaves the line; 11/14 sit a step deeper, 15 sweeps.
+    const cover=remaining.find(p=>p.slot===6)||[...remaining].sort((a,b)=>(b.y-a.y)*dir)[0];
+    const markers=remaining.filter(p=>p.id!==cover?.id);
+    const centre=FIELD.width/2,shift=clamp((c.x-centre)*.12,-24,24);
+    const lanes=[-45,45,-135,135,-220,220,0];
     const points=new Map();
     if(pressure)points.set(pressure.id,{x:c.x+clamp(c.vx*.18,-16,16),y:c.y+clamp(c.vy*.18,-16,16),role:'pressure'});
-    if(cover)points.set(cover.id,{x:c.x+clamp(c.vx*.3,-25,25),y:c.y+dir*105,role:'cover'});
-    markers.forEach((p,i)=>{const t=threats[i];points.set(p.id,{x:t?t.x*.8+c.x*.2:c.x+(i-(markers.length-1)/2)*65,y:c.y+dir*(30+(i%2)*14),role:'mark'});});
+    if(cover)points.set(cover.id,{x:centre+(c.x-centre)*.35,y:c.y+dir*105,role:'cover'});
+    markers.forEach(p=>points.set(p.id,{
+      x:centre+lanes[p.slot]+shift,
+      y:c.y+dir*(p.slot===4||p.slot===5?62:36),role:'mark'
+    }));
     for(const point of points.values()){point.x=clamp(point.x,FIELD.left+8,FIELD.right-8);point.y=clamp(point.y,FIELD.top-16,FIELD.bottom+16);}
     // A defender who has closed on the runner must finish that step before turning.
     for(const p of eligible)if(p.commitUntil>this.elapsed&&!(p.team===0&&p.id===this.selected)){
@@ -630,6 +637,9 @@ export class Match{
       }
       if(p.brace){speed*=.6;this.spendEnergy(p,dt*5);}
       if(p.tackleWind>0&&p.dive<=0&&!chasing)speed*=.45;
+      // Carrying the ball costs a little pace for both teams. Dedicated dive
+      // and sidestep moves keep their own short action speeds.
+      if(!this.ball&&p.id===this.carrierId&&p.dive<=0&&p.evade<=0)speed*=CARRIER_PACE;
       const norm=Math.hypot(dx,dy);if(norm>1){dx/=norm;dy/=norm;}
       const blend=p.dive>0?1:1-Math.exp(-dt*18);p.vx+=(dx*speed-p.vx)*blend;p.vy+=(dy*speed-p.vy)*blend;
       p.x=clamp(p.x+p.vx*dt,FIELD.left+8,FIELD.right-8);p.y=clamp(p.y+p.vy*dt,FIELD.top-22,FIELD.bottom+22);p.moveSpeed=dt>0?Math.hypot(p.x-p.px,p.y-p.py)/dt:0;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;if(Math.abs(p.vy)>3)p.facing=Math.sign(p.vy);

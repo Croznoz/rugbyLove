@@ -44,3 +44,33 @@ test('support runners declare distinct gap, return and width intentions',()=>{
  assert.equal(runners.filter(p=>p.supportIntent==='return').length,2);
  assert.equal(runners.filter(p=>p.supportIntent==='width').length,2);
 });
+
+test('bunched attackers cannot collapse defensive lanes, wings and fullback stay deeper',()=>{
+ for(const team of [0,1])for(const direction of [-1,1])for(const x of [FIELD.left+8,300,FIELD.right-8]){
+  const m=live();m.attackDir=direction;m.lineup(team);const c=m.carrier,d=m.dir(team);
+  c.x=x;c.y=550;
+  for(const p of m.players.filter(p=>p.team===team&&p.id!==c.id)){p.x=x;p.y=c.y-d*25;}
+  const defenders=m.players.filter(p=>p.team!==team);
+  // A central player applies pressure while the back three cover their own lanes.
+  const pressure=defenders[0];pressure.x=x;pressure.y=c.y+d*10;
+  m.selected=c.id;
+  const plan=m.defenseTargets(c),line=defenders.filter(p=>p.slot<4&&p.id!==plan.pressure).map(p=>plan.points.get(p.id));
+  assert.equal(plan.pressure,pressure.id);
+  assert.equal(plan.points.get(defenders[6].id).role,'cover');
+  const wings=[4,5].map(slot=>plan.points.get(defenders[slot].id));
+  assert.ok(wings[1].x-wings[0].x>400);
+  for(const wing of wings)for(const point of line)assert.ok((wing.y-point.y)*d>=25);
+  assert.ok((plan.points.get(defenders[6].id).y-wings[0].y)*d>=40);
+  const markers=[...plan.points.values()].filter(p=>p.role==='mark').sort((a,b)=>a.x-b.x);
+  for(let i=1;i<markers.length;i++)assert.ok(markers[i].x-markers[i-1].x>=80);
+ }
+});
+
+test('AI defenders spread back out from a crowd during live play',()=>{
+ const m=live(),c=m.carrier;
+ for(const p of m.players.filter(p=>p.team===1)){p.x=300;p.y=450;}
+ tick(m,5);
+ const left=m.players[11],right=m.players[12],fullback=m.players[13];
+ assert.ok(right.x-left.x>380);
+ assert.ok((fullback.y-left.y)*m.dir(c.team)>25);
+});

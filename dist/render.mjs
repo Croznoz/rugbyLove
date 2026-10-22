@@ -1,6 +1,6 @@
 import {FIELD,clamp} from './engine.mjs';
 import {drawConversion} from './conversion-render.mjs';
-import {ART,KITS} from './art.mjs';
+import {ART,KITS,polygon} from './art.mjs';
 const DIGITS=[
   '01110100011001110101110011000101110','00100011000010000100001000010001110',
   '01110100010000100010001000100011111','11110000010000101110000010000111110',
@@ -26,43 +26,34 @@ export class Renderer{
   }
   resize(){
     const r=this.canvas.getBoundingClientRect();this.width=Math.max(1,r.width);this.height=Math.max(1,r.height);this.dpr=Math.min(window.devicePixelRatio||1,2);
-    this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.zoom=this.width<650?this.width/FIELD.width:Math.min(1.65,this.width/720);this.ctx.imageSmoothingEnabled=false;
+    this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.zoom=this.width<650?this.width/FIELD.width:Math.min(1.65,this.width/720);this.ctx.imageSmoothingEnabled=true;
   }
   makeField(){
     const canvas=document.createElement('canvas');canvas.width=FIELD.width+320*FIELD.width/480;canvas.height=FIELD.height+160*FIELD.height/880;
     const c=canvas.getContext('2d');c.scale(FIELD.width/480,FIELD.height/880);c.translate(160,80);
     const fill=(x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(x,y,w,h);};
-    fill(-160,-80,800,1040,'#314c4b');
-    // Cached stands: warm seats under slate-blue cantilever roofs.
-    for(let side=0;side<2;side++){
-      const x=side===0?-146:520;fill(x,-38,106,956,'#142238');
-      for(let row=0;row<9;row++)for(let n=0;n<112;n++){
-        const px=x+row*10,py=n*8-25,seed=(row*73+n*41+side*7)%19;
-        fill(px,py,4,4,['#a48961','#d8c394','#2e4152','#697b75','#775d4d','#c3b98b'][seed%6]);
-        if(seed%3===0)fill(px+1,py-2,2,2,'#cba67a');
+    fill(-160,-80,800,1040,'#a8b999');
+    polygon(c,[[-160,-80],[180,-80],[-25,960],[-160,960]],'#b9c5a1');
+    polygon(c,[[480,-80],[640,80],[640,960],[500,760]],'#94af93');
+    // Quiet paths, a few spectators and faceted trees frame the playing surface.
+    for(const side of [-1,1]){
+      const x=side<0?-34:494;
+      fill(x,-40,20,960,'#d8c9a8');
+      for(let i=0;i<12;i++){
+        const tx=side<0?-72-(i%3)*24:550+(i%3)*24,ty=i*82-20,size=19+i%3*6;
+        polygon(c,[[tx-7,ty],[tx+size*1.6,ty+size],[tx+size*2,ty+size*.6],[tx+5,ty-8]],'#466d6126');
+        fill(tx-2,ty-8,4,14,'#8b8c6c');
+        polygon(c,[[tx-size,ty-9],[tx-size*.7,ty-size*1.7],[tx,ty-size*2.4],[tx+size,ty-size],[tx+size*.7,ty]],i%4===0?'#d1b481':'#739d87');
+        polygon(c,[[tx,ty-size*2.4],[tx+size,ty-size],[tx+size*.7,ty],[tx,ty-9]],i%4===0?'#b5a37b':'#5d8778');
       }
-      for(let row=0;row<4;row++)fill(x+row*26,-38,3,956,'#b8b38a');
-      const roofX=side===0?-155:573;
-      fill(roofX,-48,67,972,'#314d5e');
-      for(let i=0;i<280;i++)fill(roofX+(i*17)%63,-44+(i*37)%960,8+i%3*4,3,['#3f5e6a','#526e74','#293e54'][i%3]);
-      for(let n=0;n<10;n++){fill(side===0?-90:568,n*97-30,6,76,'#6d8380');fill(side===0?-90:568,n*97-30,21,3,'#a1ac94');}
-      fill(side===0?-37:490,-8,24,896,'#b6af83');fill(side===0?-33:493,-8,3,896,'#e1d7a5');
-      for(let n=0;n<9;n++){
-        const bx=side===0?-17:483;fill(bx,n*100+8,12,82,n%2?'#e8ddb0':'#1a2b40');
-        c.save();c.translate(bx+8,n*100+50);c.rotate(-Math.PI/2);c.fillStyle=n%2?'#22374a':'#ecdfb0';c.font='bold 6px monospace';c.textAlign='center';c.fillText(n%2?'RUGBY CLUB':'GOLDEN HOUR',0,0);c.restore();
+      for(let i=0;i<22;i++){
+        const py=i*39+20,px=side<0?-10:484;
+        fill(px+3,py+1,8,3,'#496c6333');fill(px,py-6,4,7,['#e7dcc2','#547685','#c58e75'][i%3]);fill(px,py-9,4,3,'#d1ae86');
       }
     }
-    fill(0,0,480,880,'#5f7d3b');
-    const lawn=['#83964b','#7a9146','#718b42','#6b873f','#64823d','#607d3c','#59773b','#53723a','#4e6d39','#496838'];
-    for(let i=0;i<10;i++)fill(34,85+i*71,412,71,lawn[i]);
-    fill(34,30,412,55,'#5c7939');fill(34,795,412,55,'#466637');
-    // Broad, irregular pixel clusters emulate the grass in the reference.
-    for(let i=0;i<1700;i++){
-      const x=(i*173)%475,y=(i*257)%876,lit=x<270&&y<620;
-      fill(x,y,2+i%7*2,1+i%2,lit?(i%2?'#d5da8b18':'#324f3912'):(i%2?'#b2bf6418':'#1e4b3a18'));
-    }
-    // A stepped roof shadow grazes the touchline, never the central playing lane.
-    for(let i=0;i<6;i++)fill(452-i*5,80+i*19,28+i*5,710-i*19,'#182e3810');
+    fill(0,0,480,880,ART.grass);
+    for(let i=0;i<10;i++)fill(34,85+i*71,412,71,i%2?'#89aa82':'#8dae85');
+    fill(34,30,412,55,'#7e9f7c');fill(34,795,412,55,'#7e9f7c');
     c.strokeStyle=ART.line;c.lineWidth=1.4;c.strokeRect(34,30,412,820);
     for(const y of [85,241,440,639,795]){c.beginPath();c.moveTo(34,y);c.lineTo(446,y);c.stroke();}
     c.save();c.setLineDash([7,8]);c.lineWidth=1;for(const y of [120,369,511,760]){c.beginPath();c.moveTo(34,y);c.lineTo(446,y);c.stroke();}for(const x of [69,140,340,411]){c.beginPath();c.moveTo(x,85);c.lineTo(x,795);c.stroke();}c.restore();
@@ -80,11 +71,8 @@ export class Renderer{
   }
   drawPlayer(c,p,x,y,selected,carrier){
     c.save();c.translate(x,y);c.scale(1.35*p.profile.width,1.35*p.profile.height);
-    // Long, stepped late-afternoon shadows stay anchored to the pitch.
-    // Pixel-art depth: stepped contact and cast shadows give the sprite a
-    // small 3D footprint without smoothing the silhouette.
-    c.fillStyle='#102b3a30';for(let i=0;i<7;i++)c.fillRect(-8+i*3,5+i*2,16-i,3);
-    c.fillStyle='#102b3a52';for(let i=0;i<4;i++)c.fillRect(-6+i*3,6+i*2,12-i,2);
+    polygon(c,[[-8,4],[6,1],[36,20],[28,26]],'#355d5730');
+    c.fillStyle='#355d5738';c.beginPath();c.ellipse(0,5,10,4,0,0,Math.PI*2);c.fill();
     if(selected){c.strokeStyle=ART.sun;c.lineWidth=1.5;c.beginPath();c.ellipse(0,4,14,6,0,0,Math.PI*2);c.stroke();}
     if(p.charge>0){c.strokeStyle='#f4ca70';c.lineWidth=2;c.beginPath();c.ellipse(0,4,16,7,0,0,Math.PI*2);c.stroke();c.beginPath();for(const offset of [-5,5]){c.moveTo(offset-p.chargeX*19,4-p.chargeY*19);c.lineTo(offset-p.chargeX*29,4-p.chargeY*29);}c.stroke();}
     if(p.dive>0){c.rotate(Math.atan2(p.diveY,p.diveX)+Math.PI/2);c.scale(1,.72);}
@@ -94,41 +82,29 @@ export class Renderer{
     const kit=KITS[p.team],outline=ART.deep,powerful=p.profile.label==='POTENTE';
     const skins=[['#eaa16b','#aa5538','#ffd092'],['#bc7850','#743c32','#e9a46e'],['#efb77d','#b96c43','#ffdaa0']], [skin,skinShade,skinLight]=skins[p.slot%3];
     const run=Math.min(1,Math.hypot(p.vx,p.vy)/40),s=p.kickAnim>0?-5:Math.round(Math.sin(p.anim)*3*run);
-    // Adult proportions: smaller heads, longer thighs and knee-high dark socks.
+    // Simple faceted volumes, with one sunlit face and one shaded face.
     for(const [lx,offset] of [[-7,s],[2,-s]]){
-      rect(lx-1,-10,7,12+offset,outline);rect(lx,-9,5,9+offset,skinShade);
-      rect(lx,-9,3,8+offset,skin);rect(lx,-8,1,5,skinLight);
-      rect(lx,-1+offset,5,9,kit.socks);rect(lx,-1+offset,5,2,kit.trim);rect(lx,2+offset,2,5,kit.sockLight);
-      rect(lx-1,7+offset,7,3,outline);rect(lx-2,9+offset,8,2,outline);rect(lx,7+offset,2,1,'#68736a');
+      rect(lx,-11,5,12+offset,skin);rect(lx+3,-11,2,12+offset,skinShade);
+      rect(lx,offset,5,9,kit.socks);rect(lx,offset,5,2,kit.trim);
+      polygon(c,[[lx-1,8+offset],[lx+5,8+offset],[lx+7,11+offset],[lx-1,11+offset]],outline);
     }
-    // Angular, folded shorts, strongly contrasted against the navy shirt.
-    rect(-9,-17,18,9,outline);rect(-8,-16,16,7,kit.shorts);
-    rect(-8,-16,13,2,kit.shortLight);rect(5,-14,3,6,kit.shortShade);rect(-7,-8,13,2,kit.shortShade);
-    rect(-1,-13,2,5,outline);rect(-5,-11,3,2,kit.shortShade);rect(3,-10,2,1,kit.shortLight);
-    rect(-9,-32,18,16,outline);rect(-11,-30,22,7,outline);
-    // Offset edge reads as a chunky extruded side; top-left pixels catch the
-    // warm stadium light from the reference image.
-    rect(-7,-30,16,14,outline);rect(-8,-31,16,14,kit.body);rect(-7,-31,14,2,kit.light);rect(5,-28,3,11,kit.shade);
-    rect(-8,-29,2,8,kit.light);rect(4,-27,2,8,kit.shade);
-    rect(-8,-28,2,9,kit.light);rect(-7,-18,13,1,kit.shade);
-    // Sleeves, bare forearms and wrist tape. Warm light catches one edge only.
+    polygon(c,[[-9,-17],[9,-17],[8,-6],[1,-6],[0,-11],[-2,-6],[-8,-6]],kit.shorts);
+    polygon(c,[[2,-17],[9,-17],[8,-6],[2,-6]],kit.shortShade);
+    polygon(c,[[-7,-32],[6,-32],[11,-26],[8,-16],[-8,-16],[-11,-26]],kit.body);
+    polygon(c,[[-7,-32],[6,-32],[9,-28],[-9,-28]],kit.light);
+    polygon(c,[[6,-31],[11,-26],[8,-16],[5,-16]],kit.shade);
     for(const side of [-1,1]){
       const ax=side<0?-12:8,arm=side<0?-s:carrier?-3:s;
-      rect(ax,-29,4,7,kit.body);rect(ax,-29,3,2,kit.light);rect(ax,-24,4,2,kit.trim);
-      rect(ax,-22+arm,4,10,outline);rect(ax,-22+arm,3,8,skinShade);rect(ax,-22+arm,2,6,skin);
-      rect(ax,-21+arm,1,3,skinLight);rect(ax,-15+arm,3,1,kit.trim);rect(ax,-13+arm,2,2,skinShade);
+      rect(ax,-27,4,7,kit.body);rect(ax,-21+arm,4,9,skin);rect(ax+2,-21+arm,2,9,skinShade);
     }
-    rect(-3,-35,6,5,skinShade);rect(-3,-33,3,2,skin);
-    rect(-4,-31,3,2,kit.trim);rect(1,-31,3,2,kit.trim);rect(-1,-30,2,2,kit.shade);
-    // Compact head with rust highlights and deep blue shaded side, like the reference.
-    rect(-4,-42,8,8,outline);rect(-4,-41,8,7,skin);rect(2,-40,2,6,skinShade);
-    rect(-5,-39,1,3,skin);rect(4,-39,1,3,skinShade);rect(-3,-40,2,2,skinLight);
-    const hair=['#402325','#171727','#634031'][p.slot%3];
-    rect(-4,-42,8,3,hair);rect(-4,-40,2,3,hair);rect(-3,-43,5,1,p.slot%3===0?'#79372c':hair);
-    if(p.facing>0){rect(-2,-37,1,1,outline);rect(2,-37,1,1,outline);rect(0,-36,1,2,skinShade);}
-    else{rect(-3,-40,6,4,hair);rect(-3,-41,4,1,p.slot%3===0?'#703326':hair);}
-    if(powerful){rect(-4,-42,8,3,kit.shade);rect(-5,-40,2,5,kit.body);rect(3,-40,2,5,kit.shade);rect(-1,-42,2,2,kit.trim);}
-    if(carrier){c.save();c.translate(11,-20);c.rotate(-.5);rect(-5,-3,11,6,'#775537');rect(-4,-3,8,5,'#f4e5b4');rect(-3,-3,2,5,'#bda778');rect(2,-2,1,3,'#927552');rect(-1,-2,2,1,'#fff4d2');c.restore();}
+    rect(-3,-35,6,5,skinShade);
+    polygon(c,[[-4,-42],[3,-42],[5,-39],[4,-34],[-3,-34],[-5,-38]],skin);
+    polygon(c,[[2,-42],[5,-39],[4,-34],[1,-34]],skinShade);
+    const hair=['#69564a','#3c4641','#967252'][p.slot%3];
+    polygon(c,[[-4,-42],[3,-43],[5,-40],[2,-39],[-5,-40]],hair);
+    if(p.facing<0)rect(-4,-40,7,4,hair);
+    if(powerful){rect(-5,-41,9,3,kit.shade);rect(-5,-40,2,5,kit.body);rect(3,-40,2,5,kit.shade);}
+    if(carrier){c.save();c.translate(12,-19);c.rotate(-.5);c.fillStyle='#fff0d0';c.beginPath();c.ellipse(0,0,7,4,0,0,Math.PI*2);c.fill();rect(-2,-3,2,6,'#b7a582');c.restore();}
     // Number is the last layer, so arms and the ball never cover it.
     drawShirtNumber(c,p.number,-27,kit);c.restore();
   }
