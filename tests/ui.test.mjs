@@ -110,8 +110,8 @@ test('touch and keyboard tackles can trigger the powerful profile loose-ball act
 });
 test('joystick keeps steering beyond its rim and ignores a second finger until release',()=>{
  start();active.guard=99;
- // Allow acceleration toward the carrier pace (78 × 0.90).
- const moving=78*.90*.94;
+ // Allow acceleration toward the carrier pace (78 × 0.82).
+ const moving=78*.82*.94;
  dispatch('joystickArea','pointerdown',{pointerId:201,clientX:138,clientY:60});
  frame(10);assert.ok(active.controlled.vx>moving);
  dispatch('joystickArea','pointerdown',{pointerId:202,clientX:-18,clientY:60});

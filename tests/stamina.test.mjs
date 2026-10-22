@@ -5,7 +5,15 @@ const live=()=>{const m=new Match();m.reset();m.phase='live';m.guard=999;m.passC
 const tick=(m,t,input={x:0,y:0})=>{for(let i=0;i<Math.round(t*120);i++)m.step(1/120,input);};
 test('short runs preserve energy but only resting recovers it',()=>{const rest=live(),run=live();rest.carrier.energy=run.carrier.energy=40;tick(rest,1);tick(run,1,{x:1,y:0});assert.ok(rest.carrier.energy>run.carrier.energy+5);assert.ok(run.carrier.energy<41);const full=live();tick(full,1,{x:1,y:0});assert.equal(full.carrier.energy,100);});
 test('sprint drains only the active player and exhaustion cannot flicker every frame',()=>{const m=live();m.carrier.energy=10;tick(m,.5,{x:1,y:0,sprint:true});assert.ok(m.carrier.exhausted);assert.equal(m.players[1].energy,100);const energy=m.carrier.energy;tick(m,.3,{x:1,y:0,sprint:true});assert.ok(m.carrier.exhausted);assert.ok(m.carrier.energy>=energy);tick(m,4);assert.ok(m.carrier.energy>=25);assert.equal(m.carrier.exhausted,false);});
-test('low stamina preserves normal speed and passing, charge has a shorter timing window',()=>{const a=live(),b=live();a.carrier.energy=5;tick(a,.4,{x:1,y:0});tick(b,.4,{x:1,y:0});assert.ok(distance(a.carrier,b.carrier)<.01);assert.ok(a.pass());const fresh=live(),tired=live();tired.carrier.energy=32;fresh.special({x:0,y:-1});tired.special({x:0,y:-1});assert.ok(tired.carrier.charge>0&&tired.carrier.charge<fresh.carrier.charge);});
+test('sprint costs 20 percent more and a depleted player runs much slower',()=>{
+ const fresh=live();fresh.carrier.runLoad=0;fresh.step(1/120,{x:1,y:0,sprint:true});assert.ok(Math.abs(fresh.carrier.energy-(100-28.8/120))<.02);
+ const rested=live(),empty=live(),startRested={x:rested.carrier.x,y:rested.carrier.y},startEmpty={x:empty.carrier.x,y:empty.carrier.y};
+ rested.carrier.energy=empty.carrier.energy=0;empty.carrier.exhausted=true;
+ for(const m of [rested,empty]){m.carrier.energyWait=2;m.carrier.runLoad=0;}
+ tick(rested,.3,{x:0,y:-1});tick(empty,.3,{x:0,y:-1});
+ assert.ok(distance(empty.carrier,startEmpty)<distance(rested.carrier,startRested)*.55);
+});
+test('low but nonempty stamina preserves normal speed and passing, charge has a shorter timing window',()=>{const a=live(),b=live();a.carrier.energy=5;tick(a,.4,{x:1,y:0});tick(b,.4,{x:1,y:0});assert.ok(distance(a.carrier,b.carrier)<.01);assert.ok(a.pass());const fresh=live(),tired=live();tired.carrier.energy=38;fresh.special({x:0,y:-1});tired.special({x:0,y:-1});assert.ok(tired.carrier.charge>0&&tired.carrier.charge<fresh.carrier.charge);});
 test('automatic tackles charge either team exactly once, including the offload window',()=>{for(const team of [0,1]){const m=live();m.lineup(team);m.guard=0;const defender=m.players[(1-team)*7];m.tackle(defender);assert.equal(defender.energy,88);if(m.phase==='contact'){m.phase='live';m.tackle(defender,false,true);}assert.equal(defender.energy,88);}});
 test('pause freezes energy; reset fills all individual reserves',()=>{const m=live();m.spendEnergy(m.carrier,40);m.state='paused';tick(m,5);assert.equal(m.carrier.energy,60);m.reset();assert.ok(m.players.every(p=>p.energy===p.profile.stamina&&!p.exhausted));});
 test('sustained running drains progressively and a brief stop does not reset accumulated effort',()=>{
@@ -25,11 +33,12 @@ test('normal running fatigue applies equally to AI on both teams and does not dr
  assert.ok(m.players[1].energy<85);assert.equal(m.players[1].energy,m.players[8].energy);
  assert.equal(m.carrier.energy,100);
 });
-test('actual long runs lose energy; rest restores it without a movement penalty',()=>{
+test('actual long runs lose energy; rest restores it and exhaustion slows movement',()=>{
  const m=live();tick(m,5,{x:0,y:-1});assert.ok(m.carrier.energy<97);
  const energy=m.carrier.energy;tick(m,2);assert.ok(m.carrier.energy>energy);
  const a=live(),b=live();a.carrier.energy=1;a.carrier.exhausted=true;a.carrier.runLoad=12;
- tick(a,1,{x:0,y:-1});tick(b,1,{x:0,y:-1});assert.ok(distance(a.carrier,b.carrier)<.01);
+ const startA={x:a.carrier.x,y:a.carrier.y},startB={x:b.carrier.x,y:b.carrier.y};
+ tick(a,1,{x:0,y:-1});tick(b,1,{x:0,y:-1});assert.ok(distance(a.carrier,startA)<distance(b.carrier,startB)*.55);
 });
 test('fatigue follows simulation time during kick aim and freezes on pause',()=>{
  const slow=live(),normal=live();for(const m of [slow,normal]){m.carrier.runLoad=6;m.carrier.moveSpeed=78;}

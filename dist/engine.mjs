@@ -2,6 +2,7 @@ export const FIELD={width:720,height:1320,left:51,right:669,top:127.5,bottom:119
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const CARRIER_PACE=.82;
+const EXHAUSTED_PACE=.48;
 // Fixed role profiles: appearance and action bonuses never alter normal running or passing.
 export const PROFILES=Object.freeze({
   powerful:Object.freeze({label:'POTENTE',stamina:90,width:1.15,height:1.08,sprint:1.28,agility:.95,charge:1.12,tackle:1.1,kick:1}),
@@ -334,10 +335,10 @@ export class Match{
         p.evade=.22;p.chargeX=Math.sign(input.x);p.chargeY=this.dir(0)*.28;
         p.charge=0;p.burst=0;p.cd=.85;this.spendEnergy(p,18);this.emit('sidestep');return;
       }
-      if(p.energy<30){this.emit('hint','RIPRENDI FIATO','SERVE ENERGIA PER SFONDARE');return;}
+      if(p.energy<36){this.emit('hint','RIPRENDI FIATO','SERVE ENERGIA PER SFONDARE');return;}
       let dx=input.x||0,dy=input.y||0;
       if(Math.hypot(dx,dy)<.15){dx=p.vx;dy=p.vy;if(Math.hypot(dx,dy)<6){dx=0;dy=this.dir(p.team);}}
-      const len=Math.hypot(dx,dy)||1;p.chargeX=dx/len;p.chargeY=dy/len;p.charge=(.28+.20*clamp((p.energy-30)/30,0,1))*p.profile.charge;p.burst=.4;this.spendEnergy(p,30);p.cd=1.25;this.emit('charge');
+      const len=Math.hypot(dx,dy)||1;p.chargeX=dx/len;p.chargeY=dy/len;p.charge=(.28+.20*clamp((p.energy-36)/30,0,1))*p.profile.charge;p.burst=.4;this.spendEnergy(p,36);p.cd=1.25;this.emit('charge');
     }else{
       if(p.energy<12){this.emit('hint','RIPRENDI FIATO','IL PLACCAGGIO A CONTATTO RESTA ATTIVO');return;}p.dominantAttempt=p.profile===PROFILES.powerful&&p.energy>=35&&this.elapsed>=p.dominantReadyAt;this.spendEnergy(p,12);p.cd=.9;const c=this.carrier,len=distance(p,c)||1;
       p.diveX=(c.x-p.x)/len;p.diveY=(c.y-p.y)/len;p.dive=.22*p.profile.tackle;this.emit('dive');
@@ -604,7 +605,7 @@ export class Match{
       }else if(p.evade>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;speed=150*p.profile.agility;
       }else if(this.ball?.kind==='pass'&&p.id===this.ball.to){
         dx=this.ball.runX;dy=this.ball.runY;const run=Math.hypot(dx,dy)||1;dx/=run;dy/=run;speed=78;
-      }else if(p.id===this.selected){dx=input.x||0;dy=input.y||0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*24*(1+.25*clamp(p.runLoad/8,0,1)));}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
+      }else if(p.id===this.selected){dx=input.x||0;dy=input.y||0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*28.8*(1+.25*clamp(p.runLoad/8,0,1)));}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
       }else if(p.id===this.carrierId&&!this.ball){
         const dir=this.dir(p.team);let repel=0;
         for(const d of defenders){if(d.down>0)continue;const ahead=(d.y-p.y)*dir;if(ahead>-15&&ahead<110)repel+=(p.x>=d.x?1:-1)*Math.max(0,75-Math.abs(p.x-d.x))*.025;}
@@ -639,6 +640,7 @@ export class Match{
       }
       if(p.brace){speed*=.6;this.spendEnergy(p,dt*5);}
       if(p.tackleWind>0&&p.dive<=0&&!chasing)speed*=.45;
+      if(p.exhausted)speed*=EXHAUSTED_PACE;
       // Carrying the ball costs a little pace for both teams. Dedicated dive
       // and sidestep moves keep their own short action speeds.
       if(!this.ball&&p.id===this.carrierId&&p.dive<=0&&p.evade<=0)speed*=CARRIER_PACE;

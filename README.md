@@ -122,7 +122,8 @@ placcaggi o punteggio e non richiedono comandi aggiuntivi.
 Ricezioni in corsa, ripartenze senza riallineare le squadre, offload, mischie arcade
 opzionali con difesa automatica, passaggi direzionati e difesa assistita.
 Energia individuale: la corsa continua consuma gradualmente energia dopo due secondi;
-lo scatto prolungato costa di più. Placcaggi, calci, schivate e sfondamenti
+lo scatto consuma il 20% in più e lo sfondamento costa 36 punti. A barra vuota la
+velocità si dimezza finché non recuperi almeno 25 punti. Placcaggi, calci, schivate e sfondamenti
 mantengono i propri costi. Recupero automatico nelle pause, più rapido da fermo.
 La velocità della corsa normale resta invariata e i passaggi restano gratuiti. Nessuna ruck interattiva.
 
