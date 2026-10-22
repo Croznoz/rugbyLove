@@ -18,6 +18,21 @@ test('hard-mode rear pursuit closes the gap and completes a tackle in both halve
     assert.equal(m.phase,'ruck');
   }
 });
+test('a rear CPU defender catches an exhausted ball carrier after a charge in either half',()=>{
+  for(const dir of [-1,1]){
+    const m=new Match();m.reset({difficulty:'hard',seconds:120});m.lineup(0);m.phase='live';m.attackDir=dir<0?-1:1;m.guard=0;m.cpuThink=100;
+    const c=m.carrier,forward=m.dir(0);for(const p of m.players)p.down=100;
+    Object.assign(c,{x:FIELD.width/2,y:FIELD.height/2,down:0,vx:0,vy:0,energy:36,energyWait:10});
+    const front=m.players[7],chaser=m.players[8];
+    Object.assign(front,{x:c.x,y:c.y+forward*17,down:0});
+    Object.assign(chaser,{x:c.x,y:c.y-forward*48,down:0,energy:0,energyWait:10,exhausted:true});
+    m.special({x:0,y:forward});assert.equal(c.energy,0);assert.equal(c.exhausted,true);
+    m.tackle(front);assert.equal(m.stats.breaks[0],1);
+    for(let i=0;i<720&&m.phase!=='ruck';i++)m.step(1/120,{x:0,y:forward});
+    assert.ok(chaser.moveSpeed>80,'an active defender can recover ground despite prior fatigue');
+    assert.equal(m.stats.tackles[1],1);assert.equal(m.phase,'ruck');
+  }
+});
 test('recovery pace requires moving toward the carrier, without a held action button',()=>{
   const m=chase();
   for(let i=0;i<60;i++)m.step(1/120,{x:1,y:0});

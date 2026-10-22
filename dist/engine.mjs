@@ -630,17 +630,17 @@ export class Match{
         }
         const dist=Math.hypot(tx-p.x,ty-p.y);if(dist>4){dx=(tx-p.x)/dist;dy=(ty-p.y)/dist;speed=Math.min(speed,dist*3);}
       }
-      // A beaten defender can recover ground by actively chasing the carrier.
-      // Keep this independent of stamina, and leave attacking/loose-ball pace alone.
+      // A beaten defender on either team can recover ground by actively chasing.
+      // Keep chase pace independent of stamina; leave attackers and loose-ball runs alone.
       const chaseDir=this.dir(this.possession),gapX=carrier.x-p.x,gapY=carrier.y-p.y;
-      const chasing=!this.ball&&p.team===0&&this.possession===1&&gapY*chaseDir>8&&
+      const chasing=!this.ball&&p.team!==this.possession&&gapY*chaseDir>8&&
         (dx*gapX+dy*gapY)>Math.hypot(gapX,gapY)*.5;
       if(chasing&&p.dive<=0&&!p.brace){
         speed=Math.max(speed,this.aiSpeed+(p.id===this.selected?10:4));
       }
       if(p.brace){speed*=.6;this.spendEnergy(p,dt*5);}
       if(p.tackleWind>0&&p.dive<=0&&!chasing)speed*=.45;
-      if(p.exhausted)speed*=EXHAUSTED_PACE;
+      if(p.exhausted&&!chasing)speed*=EXHAUSTED_PACE;
       // Carrying the ball costs a little pace for both teams. Dedicated dive
       // and sidestep moves keep their own short action speeds.
       if(!this.ball&&p.id===this.carrierId&&p.dive<=0&&p.evade<=0)speed*=CARRIER_PACE;
