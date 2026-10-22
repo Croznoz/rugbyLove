@@ -198,7 +198,6 @@ export class Renderer{
       const next=match.bestDefender();
       if(next&&next.id!==match.selected){
         c.strokeStyle='#8ddcff';c.lineWidth=1.7;c.setLineDash([3,3]);c.beginPath();c.ellipse(next.x,next.y+2,15,7,0,0,Math.PI*2);c.stroke();c.setLineDash([]);
-        c.fillStyle='#142238ed';c.fillRect(next.x-25,next.y-66,50,13);c.fillStyle='#8ddcff';c.font='bold 8px monospace';c.fillText('CAMBIA',next.x,next.y-56);
       }
     }
     if(match.perfectTackleReady()){
@@ -231,7 +230,15 @@ export class Renderer{
     }
     const ordered=[...match.players].sort((a,b)=>a.y-b.y);
     for(const p of ordered){const x=p.px+(p.x-p.px)*alpha,y=p.py+(p.y-p.py)*alpha;if(match.scrum){this.drawOverhead(c,p,x,y);continue;}this.drawPlayer(c,p,x,y,p.id===match.selected,p.id===match.carrierId&&!match.ball&&match.phase!=='scrum');}
-    if(!match.scrum){const p=match.controlled;this.drawStamina(c,p,p.px+(p.x-p.px)*alpha,p.py+(p.y-p.py)*alpha);}
+    if(!match.scrum){
+      const p=match.controlled;this.drawStamina(c,p,p.px+(p.x-p.px)*alpha,p.py+(p.y-p.py)*alpha);
+      if(match.state==='playing'&&match.phase==='live'&&(match.possession===1||match.loose)){
+        const next=match.bestDefender();
+        if(next&&next.id!==match.selected){
+          c.fillStyle='#8ddcff';c.beginPath();c.moveTo(next.x-5,next.y-68);c.lineTo(next.x+5,next.y-68);c.lineTo(next.x,next.y-60);c.closePath();c.fill();
+        }
+      }
+    }
     if(match.scrum&&match.scrum.feed===0){
       const s=match.scrum;c.strokeStyle='#e4f398';c.lineWidth=2;
       const x=s.x+s.side*80,y=s.y-match.dir(0)*45;c.beginPath();c.moveTo(s.x,s.y);c.lineTo(x,y);c.stroke();
