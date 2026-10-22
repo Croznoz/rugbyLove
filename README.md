@@ -88,6 +88,13 @@ producono anche `qa/player-style.png` con le due divise e le pose principali.
 
 ## Attacco in movimento
 
+Alle ripartenze le squadre si dispongono in uno schema da rugby a sette:
+9 al calcio d'inizio, 10 in appoggio, 12 e 13 nei canali centrali, 11 e 14
+larghi sulle fasce, 15 profondo in copertura. La squadra che riceve ha una
+prima linea pronta a contendere il calcio e il 15 arretrato. Lo schieramento
+si specchia nel secondo tempo; durante l'azione i giocatori seguono i varchi
+e mantengono le proprie opzioni di sostegno.
+
 Avvicinati a un difensore che ti sta venendo incontro e passa: deve completare
 il suo appoggio prima di girarsi verso il ricevitore. La copertura rimane libera.
 Dopo un passaggio corto, chi ha passato gira dietro al compagno per offrirsi

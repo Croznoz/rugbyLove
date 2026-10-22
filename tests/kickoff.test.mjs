@@ -1,7 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Match,FIELD} from '../dist/engine.mjs';
+import {Match,FIELD,distance} from '../dist/engine.mjs';
 const tick=(m,n)=>{for(let i=0;i<n;i++)m.step(1/60);};
+test('both kickoffs form a rugby sevens line with wings, centres and deep cover',()=>{
+ for(const kicking of [0,1])for(const attackDir of [-1,1]){
+  const m=new Match();m.reset();m.attackDir=attackDir;m.lineup(kicking);
+  const kick=m.players.slice(kicking*7,kicking*7+7);
+  const receive=m.players.slice((1-kicking)*7,(1-kicking)*7+7);
+  const d=m.dir(kicking),half=FIELD.height/2;
+  assert.equal(kick[0].y,half);
+  assert.ok(kick[4].x<kick[2].x&&kick[2].x<kick[0].x&&kick[0].x<kick[3].x&&kick[3].x<kick[5].x);
+  assert.ok(receive[4].x<receive[2].x&&receive[2].x<receive[0].x&&receive[0].x<receive[3].x&&receive[3].x<receive[5].x);
+  assert.ok((kick[6].y-half)*d<(kick[1].y-half)*d);
+  assert.ok((receive[6].y-half)*d>(receive[1].y-half)*d);
+  assert.ok(kick.every(p=>(p.y-half)*d<=0));
+  assert.ok(receive.every(p=>(p.y-half)*d>=85));
+  for(const side of [kick,receive])for(let i=0;i<side.length;i++)for(let j=i+1;j<side.length;j++)assert.ok(distance(side[i],side[j])>30);
+ }
+});
 test('opening kick crosses halfway before possession can be recovered',()=>{
  const m=new Match();m.reset();
  const d=m.dir(0);

@@ -9,6 +9,14 @@ export const PROFILES=Object.freeze({
 });
 const ROLE_PROFILES=['playmaker','playmaker','powerful','powerful','agile','agile','agile'];
 const NUMBERS=[9,10,12,13,11,14,15];
+// Slot order: 9, 10, centres 12/13, wings 11/14, fullback 15.
+// Offsets are measured from halfway in the kicking team's attacking direction.
+const KICKING_FORMATION=Object.freeze([
+  [0,0],[0,-76],[-98,-34],[98,-34],[-220,-52],[220,-52],[0,-146]
+]);
+const RECEIVING_FORMATION=Object.freeze([
+  [0,104],[0,172],[-100,88],[100,88],[-220,132],[220,132],[0,230]
+]);
 export class Match{
   constructor(){this.events=[];this.reset({});this.state='menu';this.phase='live';}
   reset({seconds=60,difficulty='normal',scrums=false}={}){
@@ -47,8 +55,12 @@ export class Match{
   lineup(team,x=FIELD.width/2,y=FIELD.height/2){
     this.loopRun=null;for(const p of this.players)p.commitUntil=0;
     this.passSelection=null;this.kickAim=null;this.attackPlan=null;this.defensePlan=null;this.scrum=null;this.contact=null;this.defenseGesture=null;this.possession=team;this.carrierId=team*7;const d=this.dir(team);this.ball=null;this.passCooldown=.7;this.guard=1.15;
-    const xs=[.5,.25,.75,62/480,418/480,170/480,310/480].map(x=>x*FIELD.width);
-    for(const p of this.players){const own=p.team===team;p.x=xs[p.slot];p.y=clamp(y+1.25*(own?(-d*(45+Math.floor(p.slot/2)*22)):(d*(72+Math.floor(p.slot/2)*32))),FIELD.top+24,FIELD.bottom-24);if(own&&p.slot===0){p.x=x;p.y=y;}p.px=p.x;p.py=p.y;p.vx=p.vy=0;p.moveSpeed=0;p.down=0;p.supportUntil=0;p.burst=0;p.charge=0;p.dive=0;p.kickAnim=0;p.dominantAttempt=false;p.brace=false;p.evade=0;p.tackleWind=0;p.facing=this.dir(p.team);}
+    for(const p of this.players){
+      const own=p.team===team,offset=(own?KICKING_FORMATION:RECEIVING_FORMATION)[p.slot];
+      p.x=clamp(x+offset[0],FIELD.left+8,FIELD.right-8);
+      p.y=clamp(y+d*offset[1],FIELD.top+24,FIELD.bottom-24);
+      p.px=p.x;p.py=p.y;p.vx=p.vy=0;p.moveSpeed=0;p.down=0;p.supportUntil=0;p.burst=0;p.charge=0;p.dive=0;p.kickAnim=0;p.dominantAttempt=false;p.brace=false;p.evade=0;p.tackleWind=0;p.facing=this.dir(p.team);
+    }
     this.selected=team===0?this.carrierId:this.nearest(0,this.carrier).id;
   }
   launchKickoff(){
@@ -286,9 +298,8 @@ export class Match{
     const best=ranked[0];
     // If a better player exists (ignoring the old 0.08 hysteresis), switch to them.
     if(best.p.id!==this.selected){this.selected=best.p.id;this.defensePlan=null;return;}
-    // Already on the best — cycle to the next if they are comparable (within 0.5s ETA).
-    const next=ranked.find(r=>r.p.id!==this.selected&&r.c<=best.c+.5);
-    if(next){this.selected=next.p.id;this.defensePlan=null;}
+    // Repeated taps keep the useful cover instead of rotating to a nearby
+    // teammate after the formation has compressed around the carrier.
   }
   beginSpecial(input={x:0,y:0}){
     if(this.defenseGesture)return;
@@ -587,7 +598,7 @@ export class Match{
       }else if(p.id===this.selected){dx=input.x||0;dy=input.y||0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*24*(1+.25*clamp(p.runLoad/8,0,1)));}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
       }else if(p.id===this.carrierId&&!this.ball){
         const dir=this.dir(p.team);let repel=0;
-        for(const d of defenders){const ahead=(d.y-p.y)*dir;if(ahead>-15&&ahead<110)repel+=(p.x>=d.x?1:-1)*Math.max(0,75-Math.abs(p.x-d.x))*.025;}
+        for(const d of defenders){if(d.down>0)continue;const ahead=(d.y-p.y)*dir;if(ahead>-15&&ahead<110)repel+=(p.x>=d.x?1:-1)*Math.max(0,75-Math.abs(p.x-d.x))*.025;}
         dx=clamp(repel+(FIELD.width/2-p.x)*.002,-.75,.75);dy=dir;
         if(p.x<FIELD.left+26)dx=.8;if(p.x>FIELD.right-26)dx=-.8;
       }else{
