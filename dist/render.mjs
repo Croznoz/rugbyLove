@@ -81,7 +81,10 @@ export class Renderer{
   drawPlayer(c,p,x,y,selected,carrier){
     c.save();c.translate(x,y);c.scale(1.35*p.profile.width,1.35*p.profile.height);
     // Long, stepped late-afternoon shadows stay anchored to the pitch.
-    c.fillStyle='#102b3a52';for(let i=0;i<7;i++)c.fillRect(-7+i*3,5+i*2,14-i,3);
+    // Pixel-art depth: stepped contact and cast shadows give the sprite a
+    // small 3D footprint without smoothing the silhouette.
+    c.fillStyle='#102b3a30';for(let i=0;i<7;i++)c.fillRect(-8+i*3,5+i*2,16-i,3);
+    c.fillStyle='#102b3a52';for(let i=0;i<4;i++)c.fillRect(-6+i*3,6+i*2,12-i,2);
     if(selected){c.strokeStyle=ART.sun;c.lineWidth=1.5;c.beginPath();c.ellipse(0,4,14,6,0,0,Math.PI*2);c.stroke();}
     if(p.charge>0){c.strokeStyle='#f4ca70';c.lineWidth=2;c.beginPath();c.ellipse(0,4,16,7,0,0,Math.PI*2);c.stroke();c.beginPath();for(const offset of [-5,5]){c.moveTo(offset-p.chargeX*19,4-p.chargeY*19);c.lineTo(offset-p.chargeX*29,4-p.chargeY*29);}c.stroke();}
     if(p.dive>0){c.rotate(Math.atan2(p.diveY,p.diveX)+Math.PI/2);c.scale(1,.72);}
@@ -100,10 +103,13 @@ export class Renderer{
     }
     // Angular, folded shorts, strongly contrasted against the navy shirt.
     rect(-9,-17,18,9,outline);rect(-8,-16,16,7,kit.shorts);
-    rect(-8,-16,13,2,kit.shortLight);rect(5,-14,3,6,kit.shortShade);
+    rect(-8,-16,13,2,kit.shortLight);rect(5,-14,3,6,kit.shortShade);rect(-7,-8,13,2,kit.shortShade);
     rect(-1,-13,2,5,outline);rect(-5,-11,3,2,kit.shortShade);rect(3,-10,2,1,kit.shortLight);
     rect(-9,-32,18,16,outline);rect(-11,-30,22,7,outline);
-    rect(-8,-31,16,14,kit.body);rect(-7,-31,14,2,kit.light);rect(5,-28,3,11,kit.shade);
+    // Offset edge reads as a chunky extruded side; top-left pixels catch the
+    // warm stadium light from the reference image.
+    rect(-7,-30,16,14,outline);rect(-8,-31,16,14,kit.body);rect(-7,-31,14,2,kit.light);rect(5,-28,3,11,kit.shade);
+    rect(-8,-29,2,8,kit.light);rect(4,-27,2,8,kit.shade);
     rect(-8,-28,2,9,kit.light);rect(-7,-18,13,1,kit.shade);
     // Sleeves, bare forearms and wrist tape. Warm light catches one edge only.
     for(const side of [-1,1]){
