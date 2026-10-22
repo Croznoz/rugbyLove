@@ -40,3 +40,22 @@ test('dominant ball stays inside the field near the goal and touchline',()=>{
  const {m,c,d}=setup();c.x=d.x=FIELD.left+8;c.y=FIELD.top+4;d.y=c.y+18;m.special();m.tackle(d,true);
  assert.equal(m.ball.kind,'fumble');assert.ok(m.ball.tx>=FIELD.left&&m.ball.tx<=FIELD.right);assert.ok(m.ball.ty>=FIELD.top-12);
 });
+test('perfect tackle cue respects facing, range, energy and cooldown in both halves',()=>{
+ for(const dir of [-1,1]){
+  const {m,c,d}=setup(dir);d.y=c.y+dir*34;
+  assert.equal(m.perfectTackleReady(),true);
+  d.energy=34;assert.equal(m.perfectTackleReady(),false);d.energy=90;
+  d.dominantReadyAt=1;assert.equal(m.perfectTackleReady(),false);d.dominantReadyAt=0;
+  d.y=c.y-dir*34;assert.equal(m.perfectTackleReady(),false);
+  d.y=c.y+dir*70;assert.equal(m.perfectTackleReady(),false);
+ }
+});
+test('perfect impact freezes the ball briefly, respects pause and clears on reset',()=>{
+ const {m}=hit();const time=m.time;
+ assert.ok(m.events.some(e=>e.type==='perfectTackle'));
+ m.step(.03);assert.equal(m.ball.t,0);assert.equal(m.time,time);
+ const remaining=m.perfectImpact.remaining;m.state='paused';m.step(1);
+ assert.equal(m.perfectImpact.remaining,remaining);
+ m.state='playing';m.step(.05);assert.ok(m.ball.t>0);
+ m.reset();assert.equal(m.perfectImpact,null);
+});

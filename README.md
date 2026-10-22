@@ -63,6 +63,9 @@ restano in punti, quindi una riserva maggiore permette uno sforzo più lungo.
 Il Potente può provocare un pallone libero con un placcaggio manuale frontale
 ben centrato: almeno 35 punti alla partenza, costo totale 25 in caso di riuscita
 (12 per il tentativo normale), attesa di 6 secondi tra due successi.
+Quando il Potente è pronto e davanti al portatore a distanza utile, «PLACCA ORA» segnala
+l’occasione: un tocco su PLACCA (o K/spazio) esegue il tuffo. Il placcaggio perfetto
+ha un fermo d’impatto di 65 ms, un’onda dorata e un suono dedicato quando l’audio è attivo.
 Entrambe le squadre possono recuperare automaticamente il pallone; nessun nuovo comando.
 Corsa normale, passaggi e tempi reali di caricamento restano uguali per tutti.
 

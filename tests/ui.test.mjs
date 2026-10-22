@@ -108,3 +108,18 @@ test('touch and keyboard tackles can trigger the powerful profile loose-ball act
   frame(8);assert.equal(active.ball?.kind,'fumble',control);assert.equal(el('phase').textContent,'PALLONE LIBERO');assert.equal(active.stats.tackles[0],1);
  }
 });
+test('joystick keeps steering beyond its rim and ignores a second finger until release',()=>{
+ start();active.guard=99;
+ dispatch('joystickArea','pointerdown',{pointerId:201,clientX:138,clientY:60});
+ frame(10);assert.ok(active.controlled.vx>70);
+ dispatch('joystickArea','pointerdown',{pointerId:202,clientX:-18,clientY:60});
+ dispatch('joystickArea','pointermove',{pointerId:202,clientX:-80,clientY:60});
+ frame(3);assert.ok(active.controlled.vx>70);
+ dispatch('joystickArea','pointermove',{pointerId:201,clientX:60,clientY:-80});
+ frame(10);assert.ok(active.controlled.vy< -70);
+ dispatch('joystickArea','pointerup',{pointerId:202});frame(3);
+ assert.ok(active.controlled.vy< -70);
+ dispatch('joystickArea','pointerup',{pointerId:201});frame(20);
+ assert.ok(Math.hypot(active.controlled.vx,active.controlled.vy)<1);
+ assert.equal(el('stick').style.transform,'translate(0px,0px)');
+});

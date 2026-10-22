@@ -13,7 +13,7 @@ export class Match{
   constructor(){this.events=[];this.reset({});this.state='menu';this.phase='live';}
   reset({seconds=60,difficulty='normal',scrums=false}={}){
     this.scrumsEnabled=!!scrums;this.scrum=null;this.seconds=seconds;this.difficulty=difficulty;this.aiSpeed={easy:70,normal:80,hard:88}[difficulty]||80;
-    this.score=[0,0];this.half=1;this.time=seconds;this.elapsed=0;this.attackDir=-1;this.possession=0;this.tackles=0;this.state='playing';this.phase='kickoff';this.phaseTime=2.1;this.events=[];this.ball=null;this.particles=[];this.cpuThink=0;this.passCooldown=0;this.guard=1;this.selected=0;
+    this.score=[0,0];this.half=1;this.time=seconds;this.elapsed=0;this.attackDir=-1;this.possession=0;this.tackles=0;this.state='playing';this.phase='kickoff';this.phaseTime=2.1;this.events=[];this.ball=null;this.particles=[];this.perfectImpact=null;this.cpuThink=0;this.passCooldown=0;this.guard=1;this.selected=0;
     this.passSelection=null;this.kickAim=null;this.attackPlan=null;this.defensePlan=null;this.conversion=null;this.contact=null;this.cpuOffloadAt=-10;this.defenseGesture=null;this.aim={x:0,y:0};
     this.stats={tries:[0,0],conversions:[0,0],conversionAttempts:[0,0],passes:[0,0],offloads:[0,0],scrums:[0,0],tackles:[0,0],breaks:[0,0],kicks:[0,0],possession:[0,0]};
     this.players=Array.from({length:14},(_,id)=>({id,team:id<7?0:1,slot:id%7,number:NUMBERS[id%7],profile:PROFILES[ROLE_PROFILES[id%7]],x:0,y:0,px:0,py:0,vx:0,vy:0,down:0,energy:PROFILES[ROLE_PROFILES[id%7]].stamina,energyWait:0,runLoad:0,moveSpeed:0,exhausted:false,burst:0,cd:0,charge:0,chargeX:0,chargeY:0,dive:0,diveX:0,diveY:0,kickAnim:0,kickCd:0,dominantReadyAt:0,dominantAttempt:false,brace:false,evade:0,tackleWind:0,tackleX:0,tackleY:0,anim:0,facing:0}));
@@ -320,6 +320,15 @@ export class Match{
     if(this.tackles>=3){this.restart.team=1-c.team;this.tackles=0;this.emit('turnover','CAMBIO POSSESSO',this.restart.team===0?'PALLA ALL’ITALIA':'PALLA ALL’IRLANDA');}
     this.phase='ruck';this.phaseTime=.42;this.restart.receiver=this.nearest(this.restart.team,this.restart,c.id).id;
   }
+  perfectTackleReady(){
+    const p=this.controlled,c=this.carrier;
+    if(this.state!=='playing'||this.phase!=='live'||this.possession!==1||this.ball||this.guard>0||
+      p.profile!==PROFILES.powerful||p.energy<35||p.cd>0||p.down>0||p.dive>0||p.brace||
+      this.elapsed<p.dominantReadyAt||c.charge>0)return false;
+    const gap=distance(p,c),speed=Math.hypot(c.vx,c.vy);
+    const fx=speed>8?c.vx/speed:0,fy=speed>8?c.vy/speed:this.dir(c.team);
+    return gap>=18&&gap<=48&&((p.x-c.x)*fx+(p.y-c.y)*fy)/gap>.85;
+  }
   dominantTackle(defender){
     const c=this.carrier,sx=c.x,sy=c.y,dx=defender.diveX,dy=defender.diveY;
     this.spendEnergy(defender,13);defender.dominantReadyAt=this.elapsed+6;
@@ -331,7 +340,8 @@ export class Match{
     this.ball={kind:'fumble',x:sx,y:sy,sx,sy,tx:clamp(sx+dx*34,FIELD.left+12,FIELD.right-12),
       ty:clamp(sy+dy*34,FIELD.top-12,FIELD.bottom+12),from:c.id,team:c.team,t:0,duration:.32,groundTime:0};
     this.selected=this.bestDefender()?.id??defender.id;
-    this.scatter(sx,sy,'#f4c36c',16);this.emit('tackle','PLACCAGGIO DOMINANTE!','PALLONE LIBERO · RECUPERA');
+    this.perfectImpact={x:sx,y:sy,remaining:.5,freeze:.065};
+    this.scatter(sx,sy,'#f4c36c',24);this.emit('perfectTackle','PLACCAGGIO PERFETTO!','PALLONE LIBERO · RECUPERA');
   }
   // Recover at the tackle without resetting either team's formation.
   stepRecovery(dt){
@@ -465,6 +475,13 @@ export class Match{
   }
   step(dt,input={x:0,y:0,sprint:false}){
     if(this.state!=='playing')return;
+    if(this.perfectImpact){
+      const impact=this.perfectImpact;
+      impact.remaining=Math.max(0,impact.remaining-dt);
+      const frozen=Math.min(dt,impact.freeze);impact.freeze-=frozen;dt-=frozen;
+      if(impact.remaining<=0)this.perfectImpact=null;
+      if(dt<=0)return;
+    }
     const realDt=dt;
     const gesture=this.defenseGesture;
     const holding=this.phase==='live'&&this.possession===1&&!this.ball&&input.sprint&&
@@ -542,8 +559,16 @@ export class Match{
         }
         const dist=Math.hypot(tx-p.x,ty-p.y);if(dist>4){dx=(tx-p.x)/dist;dy=(ty-p.y)/dist;speed=Math.min(speed,dist*3);}
       }
+      // A beaten defender can recover ground by actively chasing the carrier.
+      // Keep this independent of stamina, and leave attacking/loose-ball pace alone.
+      const chaseDir=this.dir(this.possession),gapX=carrier.x-p.x,gapY=carrier.y-p.y;
+      const chasing=!this.ball&&p.team===0&&this.possession===1&&gapY*chaseDir>8&&
+        (dx*gapX+dy*gapY)>Math.hypot(gapX,gapY)*.5;
+      if(chasing&&p.dive<=0&&!p.brace){
+        speed=Math.max(speed,this.aiSpeed+(p.id===this.selected?10:4));
+      }
       if(p.brace){speed*=.6;this.spendEnergy(p,dt*5);}
-      if(p.tackleWind>0&&p.dive<=0)speed*=.45;
+      if(p.tackleWind>0&&p.dive<=0&&!chasing)speed*=.45;
       const norm=Math.hypot(dx,dy);if(norm>1){dx/=norm;dy/=norm;}
       const blend=p.dive>0?1:1-Math.exp(-dt*18);p.vx+=(dx*speed-p.vx)*blend;p.vy+=(dy*speed-p.vy)*blend;
       p.x=clamp(p.x+p.vx*dt,FIELD.left+8,FIELD.right-8);p.y=clamp(p.y+p.vy*dt,FIELD.top-22,FIELD.bottom+22);p.moveSpeed=dt>0?Math.hypot(p.x-p.px,p.y-p.py)/dt:0;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;if(Math.abs(p.vy)>3)p.facing=Math.sign(p.vy);

@@ -1,5 +1,13 @@
 import {FIELD,clamp} from './engine.mjs';
 import {drawConversion} from './conversion-render.mjs';
+const DIGITS=['111101101101111','010110010010111','111001111100111','111001111001111','101101111001001','111100111001111','111100111101111','111001001001001','111101111101111','111101111001111'];
+// A clear central patch keeps both front and back numbers distinct from kit details.
+function drawShirtNumber(c,number,y){
+  const digits=String(number),width=digits.length*4-1,start=Math.round(-width/2);
+  c.fillStyle='#17352f';c.fillRect(start-1,y-1,width+2,7);
+  c.fillStyle='#fff5d6';
+  for(let n=0;n<digits.length;n++)for(let i=0;i<15;i++)if(DIGITS[Number(digits[n])][i]==='1')c.fillRect(start+n*4+i%3,y+Math.floor(i/3),1,1);
+}
 export class Renderer{
   constructor(canvas,map){
     this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.map=map;this.mc=map.getContext('2d');this.camera={x:FIELD.width/2,y:FIELD.height/2};this.scrumView=0;this.kickView=0;this.width=1;this.height=1;this.zoom=1;this.dpr=1;this.field=this.makeField();this.resize();
@@ -47,19 +55,46 @@ export class Renderer{
     if(p.dive>0){c.rotate(Math.atan2(p.diveY,p.diveX)+Math.PI/2);c.scale(1,.72);}
     else if(p.down>0)c.rotate(Math.PI/2);
     else if(p.charge>0)c.rotate(p.chargeX*.2);
-    const step=Math.sin(p.anim),run=Math.min(1,Math.hypot(p.vx,p.vy)/40),s=p.kickAnim>0?-7:step*3*run;
+    const step=Math.sin(p.anim),run=Math.min(1,Math.hypot(p.vx,p.vy)/40),s=p.kickAnim>0?-7:Math.round(step*3*run);
     const rect=(x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(x,y,w,h);};
-    const skin=['#d5a77c','#b67c54','#ecc29a'][p.slot%3],kit=p.team===0?'#65a9df':'#f0eee0',body=p.team===0?'#4187c6':'#225d43';
-    rect(-7,-2,5,8+s,skin);rect(2,-2,5,8-s,skin);
-    rect(-7,4+s,5,4,p.team===0?'#a5cee7':'#f1edce');rect(2,4-s,5,4,p.team===0?'#a5cee7':'#f1edce');
-    rect(-8,7+s,7,3,'#23382f');rect(2,7-s,7,3,'#23382f');
-    rect(-8,-8,16,7,p.team===0?'#203e58':'#e5e5d3');rect(-9,-21,18,14,body);
-    rect(-9,-21,18,3,kit);rect(-12,-20,4,9,body);rect(8,-20,4,9,body);
-    rect(-13,-12-s,4,7,skin);rect(9,-12+s,4,7,skin);
-    rect(-5,-29,10,9,skin);rect(-5,-30,10,4,p.slot%3===1?'#262c25':'#564432');rect(-6,-27,2,4,skin);rect(5,-27,2,4,skin);
-    if(p.facing>0){rect(-3,-24,1,1,'#26352e');rect(2,-24,1,1,'#26352e');}
-    else{c.fillStyle='#f4f4da';c.font='bold 6px monospace';c.textAlign='center';c.fillText(String(p.number),0,-12);}
-    if(carrier){c.save();c.translate(11,-12);c.rotate(-.5);c.fillStyle='#664c35';c.fillRect(-4,-2,10,6);c.fillStyle='#eee8c9';c.fillRect(-4,-3,9,5);c.fillStyle='#967b53';c.fillRect(-1,-2,1,3);c.restore();}
+    const home=p.team===0,outline='#203a35',body=home?'#4187c6':'#225d43',light=home?'#75b8e8':'#4a9166',shade=home?'#286398':'#17452f',trim=home?'#d6e8e3':'#eee9d2';
+    const skins=[['#d5a77c','#a67551'],['#b67c54','#825335'],['#ecc29a','#bf8e66']], [skin,skinShade]=skins[p.slot%3];
+    const powerful=p.profile.label==='POTENTE';
+    // Stepped silhouettes and two-tone limbs remain readable at phone scale.
+    for(const [lx,offset] of [[-7,s],[2,-s]]){
+      rect(lx-1,-3,7,12+offset,outline);rect(lx,-2,5,8+offset,skin);rect(lx+3,-2,2,8+offset,skinShade);
+      rect(lx,3+offset,5,5,home?'#91bfdf':'#eee9d2');rect(lx,4+offset,5,1,body);
+      rect(lx-1,8+offset,7,3,'#182e2b');rect(lx,8+offset,4,1,'#6b7970');
+      rect(lx+1,9+offset,2,1,trim);rect(lx,11+offset,1,1,outline);rect(lx+4,11+offset,1,1,outline);
+    }
+    rect(-9,-9,18,8,outline);rect(-8,-8,16,6,home?'#243e58':'#dddac8');
+    rect(-8,-8,16,1,trim);rect(-1,-6,2,5,outline);rect(5,-7,2,4,home?'#3a5871':'#b9bba6');
+    rect(-9,-22,18,16,outline);rect(-11,-21,22,7,outline);
+    rect(-8,-21,16,14,body);rect(-8,-21,16,3,light);rect(5,-18,3,11,shade);
+    rect(-8,-17,2,9,light);rect(-8,-8,16,1,shade);
+    rect(-7,-20,3,1,trim);rect(4,-20,3,1,trim);
+    rect(-7,-10,2,2,shade);rect(3,-9,2,1,light);
+    for(const side of [-1,1]){
+      const ax=side<0?-12:8,arm=side<0?-s:carrier?-2:s;
+      rect(ax,-20,4,8,body);rect(ax,-20,4,2,light);rect(ax,-14,4,2,trim);
+      rect(ax,-12+arm,4,7,skinShade);rect(ax,-12+arm,3,5,skin);
+      rect(ax,-7+arm,3,1,trim);rect(ax,-6+arm,2,1,skinShade);
+      if(powerful)rect(ax,-8+arm,4,2,trim);
+    }
+    rect(-3,-23,6,3,skinShade);rect(-4,-21,3,2,trim);rect(1,-21,3,2,trim);rect(-1,-20,2,2,shade);
+    // Leave the centre of the shirt clear in every facing direction.
+    if(p.facing>0){rect(-7,-19,2,2,trim);rect(-7,-18,1,1,home?'#b7443b':'#d5b860');}
+    rect(-5,-30,10,9,outline);rect(-5,-29,10,7,skin);rect(3,-28,2,6,skinShade);
+    rect(-6,-27,2,3,skin);rect(5,-27,2,3,skinShade);
+    const hair=['#564432','#252d28','#795637'][p.slot%3];
+    rect(-5,-30,10,3,hair);rect(-5,-28,2,2,hair);
+    if(p.slot%3===0)rect(-3,-31,6,1,hair);
+    if(p.slot%3===1)rect(3,-28,2,3,hair);
+    if(powerful){rect(-5,-30,10,3,home?'#29455d':'#d4d7c7');rect(-6,-28,2,5,shade);rect(4,-28,2,5,shade);rect(-1,-30,2,3,trim);}
+    if(p.facing>0){rect(-3,-25,1,1,outline);rect(2,-25,1,1,outline);rect(0,-24,1,2,skinShade);rect(-1,-22,3,1,skinShade);}
+    else rect(-4,-27,8,3,hair);
+    if(carrier){c.save();c.translate(11,-11);c.rotate(-.5);rect(-6,-2,12,5,'#664c35');rect(-5,-3,10,5,'#eee8c9');rect(-3,-3,2,5,'#b7a479');rect(2,-3,1,5,'#b7a479');rect(-1,-2,2,1,'#fff8dc');c.restore();}
+    drawShirtNumber(c,p.number,-16);
     c.restore();
   }
   drawStamina(c,p,x,y){
@@ -78,8 +113,11 @@ export class Renderer{
     c.fillStyle='#173d2b70';c.beginPath();c.ellipse(2,3,13,10,0,0,Math.PI*2);c.fill();
     c.fillStyle=p.team===0?'#65a9df':'#e9edda';c.fillRect(-11,-6,22,12);
     c.fillStyle=p.team===0?'#4187c6':'#225d43';c.fillRect(-7,-7,14,15);
-    c.fillStyle='#d5a77c';c.fillRect(-4,-12,8,7);c.fillStyle='#564432';c.fillRect(-4,-12,8,3);
-    c.fillStyle='#203e40';c.fillRect(-6,8,4,5);c.fillRect(2,8,4,5);c.restore();
+    c.fillStyle=p.team===0?'#286398':'#17452f';c.fillRect(4,-5,3,12);c.fillStyle='#eee9d2';c.fillRect(-10,-3,3,3);c.fillRect(7,-3,3,3);c.fillRect(-3,-7,6,2);
+    c.fillStyle=['#d5a77c','#b67c54','#ecc29a'][p.slot%3];c.fillRect(-4,-12,8,7);c.fillStyle='#564432';c.fillRect(-4,-12,8,3);
+    c.fillStyle='#203e40';c.fillRect(-6,8,4,5);c.fillRect(2,8,4,5);
+    // Keep the number upright for either scrum direction.
+    c.save();c.rotate(p.facing<0?0:Math.PI);drawShirtNumber(c,p.number,-2);c.restore();c.restore();
   }
   draw(match,dt=1/60,alpha=1){
     if(match.phase==='conversion'&&match.conversion){drawConversion(this,match);return;}
@@ -125,6 +163,13 @@ export class Renderer{
         c.fillStyle='#14271fe8';c.fillRect(next.x-25,next.y-66,50,13);c.fillStyle='#8ddcff';c.font='bold 8px monospace';c.fillText('CAMBIA',next.x,next.y-56);
       }
     }
+    if(match.perfectTackleReady()){
+      const p=match.carrier;
+      c.strokeStyle='#ffe29b';c.lineWidth=2.5;
+      c.beginPath();c.ellipse(p.x,p.y+3,21,10,0,0,Math.PI*2);c.stroke();
+      c.fillStyle='#14271ff0';c.fillRect(p.x-35,p.y-78,70,15);
+      c.fillStyle='#ffe29b';c.font='bold 9px monospace';c.fillText('PLACCA ORA',p.x,p.y-67);
+    }
     for(const p of match.players){
       if(p.brace||p.tackleWind>0||p.evade>0){
         c.strokeStyle=p.brace?'#8ddcff':p.evade>0?'#e4f398':'#ffc27b';c.lineWidth=2.5;
@@ -159,6 +204,17 @@ export class Renderer{
       c.fillStyle='#1c342751';c.beginPath();c.ellipse(b.x,b.y+3,5+height*.02,2+height*.008,0,0,Math.PI*2);c.fill();
       c.save();c.translate(b.x,b.y-(ground?Math.abs(Math.sin(b.groundTime*11))*Math.max(0,5-b.groundTime*6):12)-height);c.rotate(t*9);c.fillStyle='#604d31';c.fillRect(-6,-3,12,6);c.fillStyle='#f3ecd2';c.fillRect(-5,-2,10,4);c.fillStyle='#a68b63';c.fillRect(-1,-2,1,4);c.restore();}
     for(const p of match.particles){c.globalAlpha=clamp(p.life*2,0,1);c.fillStyle=p.color;c.fillRect(p.x,p.y,2,2);}c.globalAlpha=1;
+    if(match.perfectImpact){
+      const impact=match.perfectImpact,t=1-impact.remaining/.5,r=20+t*48;
+      c.save();c.globalAlpha=1-t;c.strokeStyle='#ffe29b';c.lineWidth=3*(1-t)+1;
+      c.beginPath();c.ellipse(impact.x,impact.y,r,r*.55,0,0,Math.PI*2);c.stroke();
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4;c.beginPath();
+        c.moveTo(impact.x+Math.cos(a)*(r+5),impact.y+Math.sin(a)*(r+5)*.55);
+        c.lineTo(impact.x+Math.cos(a)*(r+13),impact.y+Math.sin(a)*(r+13)*.55);c.stroke();
+      }
+      c.restore();
+    }
     this.drawMap(match);
   }
   drawMap(match){

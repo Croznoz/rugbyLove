@@ -17,6 +17,7 @@ function consumeEvents(){
     if(e.type==='scrumStart'||e.type==='scrumEnd'){releaseControls();if(e.type==='scrumStart'){$('notice').classList.remove('show');noticeUntil=0;}updateHud();}
     if(e.type==='pass')beep(430,.06,'triangle',.025);
     if(e.type==='tackle'){beep(100,.1,'triangle',.06);navigator.vibrate?.(18);}
+    if(e.type==='perfectTackle'){beep(75,.14,'triangle',.07);beep(440,.09,'triangle',.04,.07);beep(660,.12,'sine',.035,.14);navigator.vibrate?.([25,25,40]);}
     if(e.type==='dive')beep(190,.08,'triangle',.025);
     if(e.type==='charge')beep(160,.08,'triangle',.035);
     if(e.type==='break'){beep(160,.09,'triangle',.06);beep(320,.12,'triangle',.04,.06);navigator.vibrate?.([18,20,18]);}
@@ -110,7 +111,7 @@ function moveStick(e){
   $('stick').style.transform='translate('+(stickX*max)+'px,'+(stickY*max)+'px)';
 }
 const ja=$('joystickArea');
-ja.addEventListener('pointerdown',e=>{e.preventDefault();if(joyPointer!==null)return;joyPointer=e.pointerId;ja.setPointerCapture(e.pointerId);moveStick(e);});
+ja.addEventListener('pointerdown',e=>{e.preventDefault();if(paused||match.state!=='playing'||joyPointer!==null)return;joyPointer=e.pointerId;ja.setPointerCapture(e.pointerId);moveStick(e);});
 ja.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer){e.preventDefault();moveStick(e);}});
 function releaseStick(e){if(e.pointerId!==joyPointer)return;joyPointer=null;stickX=stickY=0;$('stick').style.transform='translate(0px,0px)';}
 ja.addEventListener('pointerup',releaseStick);ja.addEventListener('pointercancel',releaseStick);ja.addEventListener('lostpointercapture',releaseStick);

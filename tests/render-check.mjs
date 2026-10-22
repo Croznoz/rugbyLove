@@ -10,10 +10,11 @@ globalThis.window={devicePixelRatio:1};
 const {Renderer}=await import('../dist/render.mjs');
 const output=fileURLToPath(new URL('../qa/',import.meta.url));
 await mkdir(output,{recursive:true});
-for(const [label,w,h] of [['desktop',1100,480],['mobile',358,470],['landscape',620,290],['charge',358,470],['dive',358,470],['kick',358,470],['touchline',358,470],['stamina-medium',358,470],['stamina-low',358,470],['stamina-empty',358,470],['dominant',358,470]]){
+for(const [label,w,h] of [['desktop',1100,480],['mobile',358,470],['landscape',620,290],['charge',358,470],['dive',358,470],['kick',358,470],['touchline',358,470],['stamina-medium',358,470],['stamina-low',358,470],['stamina-empty',358,470],['dominant',358,470],['perfect-ready',358,470]]){
  const canvas=createCanvas(w,h);canvas.getBoundingClientRect=()=>({width:w,height:h});
  const map=createCanvas(108,172),r=new Renderer(canvas,map),m=new Match();m.reset();m.phase='live';m.events=[];
- if(label==='dominant'){m.lineup(1);m.guard=0;m.selected=2;const d=m.controlled,c=m.carrier;d.x=c.x;d.y=c.y+18;m.special();m.tackle(d,true);m.step(.12);}
+ if(label==='perfect-ready'){m.lineup(1);m.guard=0;m.selected=2;const d=m.controlled,c=m.carrier;d.x=c.x;d.y=c.y+34;d.px=d.x;d.py=d.y;}
+ else if(label==='dominant'){m.lineup(1);m.guard=0;m.selected=2;const d=m.controlled,c=m.carrier;d.x=c.x;d.y=c.y+18;m.special();m.tackle(d,true);m.step(.12);}
  else if(label==='touchline'){m.guard=999;m.carrier.x=FIELD.left+8;for(let i=0;i<360;i++)m.step(1/120,{x:0,y:-1});}
  else if(label==='charge'){m.special({x:0,y:-1});for(let i=0;i<18;i++)m.step(1/120,{x:0,y:-1});}
  else if(label==='dive'){m.lineup(1);m.guard=0;m.controlled.x=m.carrier.x+70;m.controlled.y=m.carrier.y;m.special();for(let i=0;i<9;i++)m.step(1/120);}
