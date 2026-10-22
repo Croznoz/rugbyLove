@@ -34,3 +34,13 @@ test('after beating the defensive line close support tightens while wide outlets
   }
  }
 });
+
+test('support runners declare distinct gap, return and width intentions',()=>{
+ const m=live(),c=m.carrier;
+ const runners=m.players.filter(p=>p.team===0&&p.id!==c.id);
+ for(const p of runners)m.supportPoint(p,c);
+ assert.equal(new Set(runners.map(p=>p.supportIntent)).size,3);
+ assert.equal(runners.filter(p=>p.supportIntent==='gap').length,2);
+ assert.equal(runners.filter(p=>p.supportIntent==='return').length,2);
+ assert.equal(runners.filter(p=>p.supportIntent==='width').length,2);
+});

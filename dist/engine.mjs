@@ -114,7 +114,14 @@ export class Match{
     // Close support follows a break for the offload; outside runners keep their width.
     const spread=lanes[rank]*(close&&breakthrough?.7:1);
     const depth=close?(breakthrough?20:24):wide?48:34;
-    const base=clamp(c.x+spread+clamp(c.vx*.15,-10,10),FIELD.left+14,FIELD.right-14);
+    // Each support lane has a distinct attacking intention: the close runner
+    // bends into the nearest gap, the channel runner offers a return angle,
+    // while the wide runner holds width for a genuine two-on-one.
+    const role=close?'close':wide?'wide':'channel';
+    const pressure=opponents.filter(q=>(q.y-c.y)*dir>=-20&&(q.y-c.y)*dir<125);
+    const gapSide=pressure.length?pressure.reduce((best,q)=>Math.abs(q.x-c.x)<Math.abs(best-c.x)?q.x:best,c.x):c.x;
+    const bend=role==='close'?clamp((c.x-gapSide)*.55,-34,34):role==='channel'?clamp((c.x-gapSide)*-.3,-22,22):0;
+    const base=clamp(c.x+spread+bend+clamp(c.vx*.15,-10,10),FIELD.left+14,FIELD.right-14);
     const ty=clamp(c.y-dir*depth,FIELD.top-22,FIELD.bottom+22);
     let tx=base,best=-Infinity;
     for(const shift of (close?[-4,0,4]:[-10,0,10])){
@@ -124,7 +131,8 @@ export class Match{
       const value=gap*.55+Math.min(lane,65)*.7-Math.abs(shift)*.3;
       if(value>best){best=value;tx=x;}
     }
-    p.supportRole=close?'close':wide?'wide':'channel';p.supportCarrier=c.id;p.supportUntil=this.elapsed+.16;p.support={x:tx,y:ty};return p.support;
+    p.supportRole=role;p.supportIntent=role==='close'?'gap':role==='wide'?'width':'return';
+    p.supportCarrier=c.id;p.supportUntil=this.elapsed+.16;p.support={x:tx,y:ty};return p.support;
   }
   laneClearance(from,to,opponents=this.players.filter(p=>p.team!==from.team&&p.down<=0)){
     const dx=to.x-from.x,dy=to.y-from.y,l2=Math.max(1,dx*dx+dy*dy);
