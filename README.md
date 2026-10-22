@@ -82,7 +82,7 @@ memorizzato e rigenerato solo al cambio di dimensioni.
 
 - `dist/art.mjs`: palette condivisa e paesaggio delle conversioni.
 - `dist/theme.css`: interfaccia, tabellone e controlli nella nuova palette.
-- `dist/assets/club-lowpoly.png`: immagine originale del menu reinterpretata in stile low-poly.
+- `dist/assets/club-opening-2026-10.png`: illustrazione geometrica del menu.
 - `dist/assets/silkscreen-regular.ttf`: font incluso localmente, licenza in `SILKSCREEN-LICENSE.txt`.
 
 Non servono servizi font o dipendenze aggiuntive per giocare. Le verifiche visive

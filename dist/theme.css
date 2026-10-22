@@ -35,7 +35,7 @@ html,body{background:#eeeadd;background-image:none}
 .team-chip{background:#386d87;border-color:#6f98a6}.away .team-chip{background:#f2dfbd;border-color:#c6b79c}
 .pitch-view{background:#86a780}#pitch{image-rendering:auto}
 .direction,.selected-info{background:#2d484be8;border-color:#d9dfc3;box-shadow:none}
-.menu-layer{background:linear-gradient(90deg,transparent 20%,#2d484b22 50%,#2d484b88),url('assets/club-lowpoly.png') center/cover no-repeat}
+.menu-layer{background:linear-gradient(90deg,transparent 20%,#2d484b22 50%,#2d484b88),url('assets/club-opening-2026-10.png') center/cover no-repeat}
 .intro-card{background:#2d484bf2;border:1px solid #cbd4bd;box-shadow:0 10px 30px #304f4420}
 .intro-card h1{font-size:32px;line-height:1.1;color:#f8f2df}.intro-card h1 em{color:#e8bc86}
 .intro-card p,.dialog p{font-family:var(--sans);color:#dce2ce}
@@ -51,5 +51,5 @@ html,body{background:#eeeadd;background-image:none}
 .dialog,.conversion-panel,.scrum-panel,.kick-panel,#helpContent{background:#2d484bf5;border-color:#cbd4bd;box-shadow:none}
 .notice strong{background:#ebcea0;border:1px solid #fff0d2;box-shadow:none;color:#2d484b}
 .icon-button{background:#f6f0df;border:1px solid #92a591;box-shadow:none}
-@media(max-width:700px){.menu-layer{background:linear-gradient(180deg,transparent,#2d484b33 35%,#2d484bd9 80%),url('assets/club-lowpoly.png') 35% center/cover no-repeat}.intro-card h1{font-size:28px}}
-@media(max-height:560px) and (orientation:landscape){.intro-card h1{font-size:22px}.menu-layer{background:linear-gradient(90deg,transparent,#2d484b99),url('assets/club-lowpoly.png') center/cover no-repeat}}
+@media(max-width:700px){.menu-layer{background:linear-gradient(180deg,transparent,#2d484b33 35%,#2d484bd9 80%),url('assets/club-opening-2026-10.png') 35% center/cover no-repeat}.intro-card h1{font-size:28px}}
+@media(max-height:560px) and (orientation:landscape){.intro-card h1{font-size:22px}.menu-layer{background:linear-gradient(90deg,transparent,#2d484b99),url('assets/club-opening-2026-10.png') center/cover no-repeat}}
