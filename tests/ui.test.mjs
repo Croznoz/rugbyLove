@@ -211,3 +211,18 @@ test('restart after conceding waits for touch or keyboard direction and power',(
   assert.equal(active.stats.kicks[0],1);
  }
 });
+test('CONTENDI appears on descent and touch, keyboard and accessible activation jump once',()=>{
+ for(const mode of ['touch','keyboard','accessible']){
+  start();for(const p of active.players){p.x=80;p.y=200;}
+  active.controlled.x=360;active.controlled.y=660;
+  active.ball={kind:'kick',team:0,from:0,eligible:[0,1,2,3,4,5,6],x:360,y:660,sx:360,sy:660,tx:360,ty:660,t:1.65,duration:2,apex:125,z:70,landed:false};
+  frame(1);assert.equal(el('labelB').textContent,'CONTENDI');assert.equal(el('actionB').disabled,false);
+  const energy=active.controlled.energy;
+  if(mode==='touch'){dispatch('actionB','pointerdown',{pointerId:401});dispatch('actionB','pointerup',{pointerId:401});dispatch('actionB','click',{detail:1});}
+  else if(mode==='keyboard'){dispatch(windowEvents,'keydown',{code:'KeyK',repeat:false});dispatch(windowEvents,'keydown',{code:'KeyK',repeat:true});dispatch(windowEvents,'keyup',{code:'KeyK'});}
+  else dispatch('actionB','click',{detail:0});
+  assert.equal(active.controlled.jump,.6);assert.equal(active.controlled.energy,energy-8);assert.equal(active.controlled.burst,0);
+  dispatch('pause','click');frame(10);assert.equal(active.controlled.jump,.6);dispatch('resume','click');frame(50);
+  assert.equal(active.ball,null);assert.notEqual(el('labelB').textContent,'CONTENDI');
+ }
+});

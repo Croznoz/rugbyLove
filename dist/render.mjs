@@ -76,6 +76,7 @@ export class Renderer{
     c.fillStyle='#355d5738';c.beginPath();c.ellipse(0,5,10,4,0,0,Math.PI*2);c.fill();
     if(selected){c.strokeStyle=ART.sun;c.lineWidth=1.5;c.beginPath();c.ellipse(0,4,14,6,0,0,Math.PI*2);c.stroke();}
     if(p.charge>0){c.strokeStyle='#f4ca70';c.lineWidth=2;c.beginPath();c.ellipse(0,4,16,7,0,0,Math.PI*2);c.stroke();c.beginPath();for(const offset of [-5,5]){c.moveTo(offset-p.chargeX*19,4-p.chargeY*19);c.lineTo(offset-p.chargeX*29,4-p.chargeY*29);}c.stroke();}
+    if(p.jump>0)c.translate(0,-Math.sin((.6-p.jump)/.6*Math.PI)*22);
     if(p.dive>0){c.rotate(Math.atan2(p.diveY,p.diveX)+Math.PI/2);c.scale(1,.72);}
     else if(p.down>0)c.rotate(Math.PI/2);
     else if(p.charge>0)c.rotate(p.chargeX*.2);
@@ -228,6 +229,11 @@ export class Renderer{
       c.fillStyle='#ffe29b';c.beginPath();c.moveTo(tx,ty);c.lineTo(tx-Math.cos(angle-.45)*17,ty-Math.sin(angle-.45)*17);c.lineTo(tx-Math.cos(angle+.45)*17,ty-Math.sin(angle+.45)*17);c.closePath();c.fill();
       c.beginPath();c.ellipse(tx,ty,15,8,0,0,Math.PI*2);c.stroke();
       c.font='bold 8px monospace';c.fillText(!a.kickoff&&a.power<=.32?'RASOTERRA':'MIRA',tx,ty-15);
+    }
+    if(match.contestWindow()){
+      const p=match.controlled,b=match.ball,remaining=b.duration-b.t,good=Math.abs(remaining-.35)<.15;
+      c.strokeStyle=good?'#b8de78':'#f4c36c';c.lineWidth=2;c.beginPath();c.ellipse(p.x,p.y+4,19,8,0,0,Math.PI*2);c.stroke();
+      c.fillStyle=c.strokeStyle;c.font='bold 8px monospace';c.textAlign='center';c.fillText('CONTENDI',p.x,p.y-86);
     }
     const ordered=[...match.players].sort((a,b)=>a.y-b.y);
     for(const p of ordered){const x=p.px+(p.x-p.px)*alpha,y=p.py+(p.y-p.py)*alpha;if(match.scrum){this.drawOverhead(c,p,x,y);continue;}this.drawPlayer(c,p,x,y,p.id===match.selected,p.id===match.carrierId&&!match.ball&&match.phase!=='scrum');}

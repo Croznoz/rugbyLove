@@ -139,3 +139,7 @@ Il calcio d’inizio della tua squadra, anche dopo una meta subita, attende CALC
 La mischia offensiva attende SPINGI (B, K o spazio): la prima pressione avvia il richiamo di 3 secondi, seguito dal duello di 4 secondi. Durante l’attesa tempo e bilanciamento restano fermi; la difesa resta automatica.
 
 I giocatori possono recuperare il pallone in tutta l’area di meta. Se una palla libera supera la linea laterale o il fondo dell’area di meta, una rimessa automatica arcade assegna il possesso all’altra squadra dentro il campo; le linee esterne non fanno rimbalzare il pallone.
+
+I calci d’inizio e dopo meta sono sempre alti, anche con un tocco breve: la potenza regola la distanza senza passare al rasoterra. Il tempo di volo permette ai due inseguitori più vicini di ogni squadra di contendere la ricezione. Se il giocatore selezionato è tra loro, segue la zona di caduta finché il joystick è neutro; muovilo per riprendere subito il controllo.
+
+Quando una palla alta scende vicino al giocatore, B / K / spazio diventa CONTENDI: premi per saltare. L’anello verde indica il momento migliore; posizione e tempismo migliorano la presa senza garantirla. Costa 8 energia, con un breve recupero prima di riprovare. Anche gli avversari contendono. Nella finestra finale di 0,65 secondi di simulazione il gioco procede al 70%, solo se sei vicino e abilitato alla contesa; risale subito alla velocità normale dopo ricezione o atterraggio. Senza premere, il recupero rimane automatico.

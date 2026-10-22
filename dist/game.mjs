@@ -4,6 +4,7 @@ const $=id=>document.getElementById(id);
 const match=new Match(),renderer=new Renderer($('pitch'),$('minimap'));
 const input={x:0,y:0,sprint:false},keys=new Set();
 let kickPointer=null,joyPointer=null,stickX=0,stickY=0,buttonPointer=null,paused=false,last=0,accumulator=0,hudAt=0,noticeUntil=0,sound=false,audio=null,frameId=0;
+let contestHud=0;
 const STEP=1/120,roles=['MEDIANO','APERTURA','CENTRO','CENTRO','ALA','ALA','ESTREMO'];
 function audioReady(){if(!sound)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume().catch(()=>{});}catch{}}
 function beep(freq=440,duration=.08,type='sine',volume=.04,delay=0){if(!sound||!audio)return;const o=audio.createOscillator(),g=audio.createGain(),at=audio.currentTime+delay;o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(volume,at+.006);g.gain.exponentialRampToValueAtTime(.001,at+duration);o.connect(g);g.connect(audio.destination);o.start(at);o.stop(at+duration+.01);}
@@ -76,6 +77,11 @@ function updateHud(){
   $('controlHint').textContent=match.loose?'INSEGUI E RECUPERA.':match.possession===0?(match.phase==='contact'?'A ORA: LIBERA LA PALLA':'INDICA IL COMPAGNO · PREMI PASSA'):'TOCCA: PLACCA · TIENI: CONTIENI';
   $('actionA').setAttribute('aria-label',match.possession===0&&!match.loose?'Passa al compagno evidenziato':'Seleziona il difensore meglio posizionato');
   $('actionB').setAttribute('aria-label',match.loose?'Scatto: tieni premuto':match.possession===0?'Tocca per sfondare, orienta di lato per schivare; tieni per scattare':'Tocca e rilascia per placcare; tieni premuto per contenere');
+  if(match.contestWindow()){
+    $('labelB').textContent='CONTENDI';$('actionB').disabled=paused||!match.canContest();
+    $('actionB').setAttribute('aria-label','Contendi: premi per saltare e prendere il pallone alto');
+    $('controlHint').textContent=match.controlled.jump>0?'CERCA LA PRESA!':'PALLA IN DISCESA · PREMI CONTENDI';
+  }
   if(match.kickAim){$('labelA').textContent='ANNULLA';$('actionB').disabled=true;$('controlHint').textContent=!match.kickAim.kickoff&&match.kickAim.power<=.32?'RILASCIA: RASOTERRA DA INSEGUIRE':'RILASCIA: CALCIO ALTO';}
   if(match.phase==='kickoff'){
     $('possession').textContent='CALCIO D’INIZIO';$('phase').textContent='BATTUTA DALLA METÀ CAMPO';
@@ -192,7 +198,7 @@ function updateScrum(){
 }
 function updateKick(){
   const a=match.kickAim;$('kickPanel').hidden=!a;if(!a)return;
-  setText('kickType',!a.kickoff&&a.power<=.32?'RASOTERRA · MIRA E RILASCIA':'CALCIO ALTO · MIRA E RILASCIA');
+  setText('kickType',a.kickoff?'RIPARTENZA ALTA · MIRA E RILASCIA':a.power<=.32?'RASOTERRA · MIRA E RILASCIA':'CALCIO ALTO · MIRA E RILASCIA');
   $('kickPower').style.transform='scaleX('+a.power+')';
   setText('kickPowerValue',Math.round(a.power*100)+'%');
 }
@@ -206,7 +212,8 @@ function frame(now){
     input.sprint=held;consumeEvents();
   }else accumulator=0;
   if(now>noticeUntil)$('notice').classList.remove('show');
-  if(now-hudAt>90){updateHud();hudAt=now;}
+  const contestState=match.contestWindow()?(match.canContest()?1:2):0;
+  if(now-hudAt>90||contestState!==contestHud){updateHud();hudAt=now;contestHud=contestState;}
   updateConversion();updateScrum();updateKick();updateCrowd();
   renderer.draw(match,dt,['live','scrum'].includes(match.phase)&&!paused?clamp(accumulator/STEP,0,1):1);
   frameId=requestAnimationFrame(frame);

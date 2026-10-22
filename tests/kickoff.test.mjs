@@ -42,3 +42,31 @@ test('second half starts with an opponent kick in the reversed direction',()=>{
  assert.equal(m.half,2);tick(m,127);assert.equal(m.ball.team,1);assert.equal(m.ball.sy,FIELD.height/2);
  assert.ok((m.ball.ty-FIELD.height/2)*m.dir(1)>71);assert.equal(m.stats.kicks[1],1);
 });
+test('restart power always produces a high flight, including a quick tap and CPU kicks',()=>{
+ for(const power of [.25,.32,.5,1]){
+  const m=new Match();m.reset();const aim={x:.3,y:-1,kickoff:true};
+  const target=m.kickTarget(aim,power);m.kick(aim,power,true);
+  const b=m.ball;assert.equal(b.grubber,false);assert.equal(b.tx,target.tx);assert.equal(b.ty,target.ty);
+  assert.ok(b.duration>=2.5);m.stepKickBall(b,b.duration/2);assert.ok(b.z>=110);assert.equal(b.landed,false);
+ }
+ const cpu=new Match();cpu.reset();cpu.lineup(1);cpu.launchKickoff();assert.equal(cpu.ball.grubber,false);assert.ok(cpu.ball.duration>=2.5);assert.ok(cpu.ball.apex>=110);
+});
+test('both sides chase and arrive to contest a high restart before it lands',()=>{
+ for(const team of [0,1])for(const dir of [-1,1]){
+  const m=new Match();m.reset();m.attackDir=dir;m.lineup(team);m.phase='kickoff';
+  if(team===0)m.kick({x:0,y:m.dir(team)},.5,true);else m.launchKickoff();
+  const b=m.ball,target={x:b.tx,y:b.ty};
+  const before=[0,1].map(t=>Math.min(...m.players.filter(p=>p.team===t).map(p=>distance(p,target))));
+  for(let i=0;i<Math.floor(b.duration*.9*120);i++)m.step(1/120);
+  assert.equal(m.ball,b,'still in the air for the contest');
+  for(const t of [0,1]){
+   const nearest=Math.min(...m.players.filter(p=>p.team===t&&m.canChase(p)).map(p=>distance(p,target)));
+   assert.ok(nearest<before[t],`team ${t} closes in`);assert.ok(nearest<40,`team ${t} reaches contest area: ${nearest}`);
+  }
+ }
+});
+test('manual movement overrides selected player kickoff chase assistance',()=>{
+ const m=new Match();m.reset();m.kick({x:0,y:-1},.5,true);const p=m.controlled,x=p.x;
+ for(let i=0;i<60;i++)m.step(1/120,{x:1,y:0});
+ assert.ok(p.x>x+20);
+});
