@@ -39,3 +39,20 @@ for(const [label,w,h] of [['desktop',1100,480],['mobile',358,470],['landscape',6
  });
  await writeFile(output+'/stamina-profiles.png',canvas.toBuffer('image/png'));
 }
+
+// Art-direction sheet: compare kits, body types, number visibility and action poses.
+{
+ const canvas=createCanvas(960,420),map=createCanvas(108,172);canvas.getBoundingClientRect=()=>({width:960,height:420});
+ const r=new Renderer(canvas,map),c=canvas.getContext('2d'),m=new Match();
+ c.fillStyle='#e8dcb1';c.fillRect(0,0,960,420);
+ const poses=[['DOS',1,{facing:-1}],['FACE',1,{facing:1}],['POTENTE',2,{facing:-1}],['CORSA',4,{facing:-1,vx:0,vy:-78,anim:1}],['PALLA',1,{facing:-1}],['TUFFO',2,{facing:1,dive:.2,diveX:1,diveY:0}]];
+ for(let team=0;team<2;team++){
+  c.fillStyle=team===0?'#627e3d':'#516e3a';c.fillRect(12,12+team*204,936,192);
+  poses.forEach(([label,slot,pose],i)=>{
+   const p={...m.players[team*7+slot],...pose},x=80+i*152,y=157+team*204;
+   c.save();c.translate(x,y);c.scale(1.8,1.8);r.drawPlayer(c,p,0,0,false,label==='PALLA');c.restore();
+   c.fillStyle='#f5eac0';c.font='10px monospace';c.textAlign='center';c.fillText(label,x,190+team*204);
+  });
+ }
+ await writeFile(output+'/player-style.png',canvas.toBuffer('image/png'));
+}

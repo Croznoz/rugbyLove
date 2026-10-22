@@ -69,6 +69,23 @@ ha un fermo d’impatto di 65 ms, un’onda dorata e un suono dedicato quando l�
 Entrambe le squadre possono recuperare automaticamente il pallone; nessun nuovo comando.
 Corsa normale, passaggi e tempi reali di caricamento restano uguali per tutti.
 
+## Stile visivo: Golden Hour
+
+Direzione grafica ispirata all’immagine di riferimento fornita: blu notte, avorio,
+verde prato e luce ambrata. Giocatori slanciati con dettagli pixel, calzettoni alti,
+pantaloncini a contrasto e numeri bitmap 5×7 visibili davanti e dietro.
+La squadra di casa indossa blu notte e avorio; gli avversari avorio e pantaloncini scuri.
+Campo e tribune sono disegnati una volta; lo stadio in prospettiva delle conversioni
+viene memorizzato e rigenerato solo al cambio di dimensioni.
+
+- `dist/art.mjs`: palette condivisa e stadio pixel in prospettiva.
+- `dist/theme.css`: interfaccia, tabellone e controlli nella nuova palette.
+- `dist/assets/club-sunset.png`: immagine di riferimento usata nel menu.
+- `dist/assets/silkscreen-regular.ttf`: font incluso localmente, licenza in `SILKSCREEN-LICENSE.txt`.
+
+Non servono servizi font o dipendenze aggiuntive per giocare. Le verifiche visive
+producono anche `qa/player-style.png` con le due divise e le pose principali.
+
 ## Attacco in movimento
 
 Avvicinati a un difensore che ti sta venendo incontro e passa: deve completare
