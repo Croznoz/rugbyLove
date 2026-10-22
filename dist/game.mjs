@@ -179,6 +179,9 @@ function updateConversion(){
 function updateScrum(){
   const s=match.phase==='scrum'?match.scrum:null;$('scrumPanel').hidden=!s;$('pitchView').classList[s?'add':'remove']('scrum-view');if(!s)return;
   setText('scrumTitle','MISCHIA · '+Math.max(0,s.duration-s.elapsed).toFixed(1)+'s');
+  const ready=s.feed===0&&s.elapsed>=1;
+  setText('scrumCallout','MISCHIA · SPINGI!!');
+  $('scrumCallout').hidden=ready||s.feed===1;$('scrumTiming').hidden=!ready;
   $('scrumNeedle').style.left=(s.needle*100)+'%';
   const feedback=s.lastAction&&s.elapsed-s.lastActionAt<.48?(s.lastAction==='win'?'SPINTA!':'FUORI TEMPO'):'MIRA '+Math.round(s.needle*100)+'%';
   setText('scrumMeterValue',s.feed===1?'AUTOMATICA':feedback);

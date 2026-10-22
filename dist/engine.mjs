@@ -434,7 +434,7 @@ export class Match{
     this.emit('scrumStart');
   }
   stepScrum(dt,input){
-    const s=this.scrum;s.elapsed+=dt;s.needle=1-Math.abs(1-(s.elapsed*1.7%2));
+    const s=this.scrum;s.elapsed+=dt;s.needle=1-Math.abs(1-(Math.max(0,s.elapsed-1)*1.36%2));
     if(s.feed===0&&Math.abs(input.x||0)>.25)s.side=Math.sign(input.x);
     const cpu={easy:.08,normal:.10,hard:.12}[this.difficulty]||.1;
     s.balance=clamp(s.balance-cpu*dt,.02,.98);
@@ -465,7 +465,7 @@ export class Match{
   }
   scrumAction(){
     const s=this.scrum;
-    if(this.state!=='playing'||this.phase!=='scrum'||!s||s.feed!==0||s.elapsed<.18||s.elapsed-s.lastDuelAt<.28)return false;
+    if(this.state!=='playing'||this.phase!=='scrum'||!s||s.feed!==0||s.elapsed<1||s.elapsed-s.lastDuelAt<.28)return false;
     s.lastDuelAt=s.elapsed;
     const success=s.needle>=.38&&s.needle<=.62,pack=this.players.slice(0,3);
     const strength=pack.reduce((sum,p)=>sum+clamp(p.energy/p.profile.stamina,0,1),0)/3;
