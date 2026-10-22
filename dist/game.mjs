@@ -7,6 +7,20 @@ let kickPointer=null,scrumPointer=null,joyPointer=null,stickX=0,stickY=0,buttonP
 const STEP=1/120,roles=['MEDIANO','APERTURA','CENTRO','CENTRO','ALA','ALA','ESTREMO'];
 function audioReady(){if(!sound)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume().catch(()=>{});}catch{}}
 function beep(freq=440,duration=.08,type='sine',volume=.04,delay=0){if(!sound||!audio)return;const o=audio.createOscillator(),g=audio.createGain(),at=audio.currentTime+delay;o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(volume,at+.006);g.gain.exponentialRampToValueAtTime(.001,at+duration);o.connect(g);g.connect(audio.destination);o.start(at);o.stop(at+duration+.01);}
+let crowd=null;
+function updateCrowd(){
+  const intensity=!paused&&match.state==='playing'?(match.phase==='try'?Math.min(1,match.phaseTime):match.breakawayIntensity()):0;
+  if(!audio)return;
+  if(!crowd&&sound&&intensity>0){
+    // One reusable filtered-noise loop: a soft stadium roar, not extra notes.
+    const buffer=audio.createBuffer(1,audio.sampleRate*2,audio.sampleRate),data=buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(.65+.35*Math.sin(i/audio.sampleRate*7));
+    const source=audio.createBufferSource(),filter=audio.createBiquadFilter(),gain=audio.createGain();
+    source.buffer=buffer;source.loop=true;filter.type='lowpass';filter.frequency.value=1100;gain.gain.value=0;
+    source.connect(filter);filter.connect(gain);gain.connect(audio.destination);source.start();crowd=gain;
+  }
+  if(crowd)crowd.gain.setTargetAtTime(sound?intensity*.16:0,audio.currentTime,sound&&intensity>0?.18:.025);
+}
 function releaseControls(){match.releaseSpecial(true);kickPointer=null;match.cancelKick();scrumPointer=null;joyPointer=null;buttonPointer=null;stickX=stickY=0;keys.clear();input.x=input.y=0;input.sprint=false;$('stick').style.transform='translate(0px,0px)';for(const id of ['actionA','actionB','actionC'])$(id).classList.remove('pressed');}
 function notice(text,tag,time=1100){$('noticeText').textContent=text;$('noticeTag').textContent=tag;$('notice').classList.add('show');noticeUntil=performance.now()+time;}
 function consumeEvents(){
@@ -16,6 +30,7 @@ function consumeEvents(){
     if(e.type==='offload'){beep(750,.1,'triangle',.035);updateHud();}
     if(e.type==='scrumStart'||e.type==='scrumEnd'){releaseControls();if(e.type==='scrumStart'){$('notice').classList.remove('show');noticeUntil=0;}updateHud();}
     if(e.type==='pass')beep(430,.06,'triangle',.025);
+    if(e.type==='oneTwo'){beep(580,.08,'triangle',.03);beep(780,.1,'triangle',.03,.07);}
     if(e.type==='tackle'){beep(100,.1,'triangle',.06);navigator.vibrate?.(18);}
     if(e.type==='perfectTackle'){beep(75,.14,'triangle',.07);beep(440,.09,'triangle',.04,.07);beep(660,.12,'sine',.035,.14);navigator.vibrate?.([25,25,40]);}
     if(e.type==='dive')beep(190,.08,'triangle',.025);
@@ -61,7 +76,7 @@ function updateHud(){
   $('controlHint').textContent=match.loose?'INSEGUI E RECUPERA.':match.possession===0?(match.phase==='contact'?'A ORA: LIBERA LA PALLA':'INDICA IL COMPAGNO · PREMI PASSA'):'TOCCA: PLACCA · TIENI: CONTIENI';
   $('actionA').setAttribute('aria-label',match.possession===0&&!match.loose?'Passa al compagno evidenziato':'Seleziona il difensore meglio posizionato');
   $('actionB').setAttribute('aria-label',match.loose?'Scatto: tieni premuto':match.possession===0?'Tocca per sfondare, orienta di lato per schivare; tieni per scattare':'Tocca e rilascia per placcare; tieni premuto per contenere');
-  if(match.kickAim){$('labelA').textContent='ANNULLA';$('actionB').disabled=true;$('controlHint').textContent='RALLENTY · MIRA E RILASCIA CALCIA';}
+  if(match.kickAim){$('labelA').textContent='ANNULLA';$('actionB').disabled=true;$('controlHint').textContent=match.kickAim.power<=.32?'RILASCIA: RASOTERRA DA INSEGUIRE':'RILASCIA: CALCIO ALTO';}
   if(match.phase==='kickoff'){
     $('possession').textContent='CALCIO D’INIZIO';$('phase').textContent='BATTUTA DALLA METÀ CAMPO';
     $('actionA').disabled=true;$('actionB').disabled=true;
@@ -83,7 +98,7 @@ function start(){
   $('pitchView').scrollIntoView({block:'nearest'});
 }
 function pause(){
-  if(match.state!=='playing'||paused)return;paused=true;releaseControls();$('pauseMenu').hidden=false;$('resume').focus();$('pause').setAttribute('aria-label','Partita in pausa');
+  if(match.state!=='playing'||paused)return;paused=true;releaseControls();updateCrowd();$('pauseMenu').hidden=false;$('resume').focus();$('pause').setAttribute('aria-label','Partita in pausa');
 }
 function resume(){paused=false;last=performance.now();accumulator=0;$('pauseMenu').hidden=true;$('pause').setAttribute('aria-label','Metti in pausa');}
 function menu(){document.body.classList.remove('playing');renderer.resize();paused=false;releaseControls();match.reset({});match.state='menu';match.phase='live';match.events=[];$('menu').hidden=false;$('pauseMenu').hidden=true;$('result').hidden=true;$('pause').disabled=true;$('notice').classList.remove('show');renderer.camera.y=440;updateHud();$('start').focus();}
@@ -104,7 +119,7 @@ conversionButton.addEventListener('click',e=>{if(e.detail===0&&!conversionButton
 $('start').addEventListener('click',start);$('replay').addEventListener('click',start);$('resultMenu').addEventListener('click',menu);$('quit').addEventListener('click',menu);$('pause').addEventListener('click',pause);$('resume').addEventListener('click',resume);
 $('help').addEventListener('click',()=>{$('helpContent').hidden=!$('helpContent').hidden;$('help').setAttribute('aria-expanded',String(!$('helpContent').hidden));});
 $('closeHelp').addEventListener('click',()=>{$('helpContent').hidden=true;$('help').setAttribute('aria-expanded','false');$('help').focus();});
-$('sound').addEventListener('click',()=>{sound=!sound;audioReady();$('soundLabel').textContent=sound?'ON':'OFF';$('sound').setAttribute('aria-pressed',String(sound));$('sound').setAttribute('aria-label',sound?'Disattiva audio':'Attiva audio');if(sound)beep(600);});
+$('sound').addEventListener('click',()=>{sound=!sound;audioReady();$('soundLabel').textContent=sound?'ON':'OFF';$('sound').setAttribute('aria-pressed',String(sound));$('sound').setAttribute('aria-label',sound?'Disattiva audio':'Attiva audio');if(sound)beep(600);updateCrowd();});
 function moveStick(e){
   const r=$('joystick').getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),d=Math.hypot(dx,dy),max=29;
   if(d<5){stickX=stickY=0;}else{stickX=dx/Math.max(d,max);stickY=dy/Math.max(d,max);}
@@ -176,6 +191,7 @@ function updateScrum(){
 }
 function updateKick(){
   const a=match.kickAim;$('kickPanel').hidden=!a;if(!a)return;
+  setText('kickType',a.power<=.32?'RASOTERRA · MIRA E RILASCIA':'CALCIO ALTO · MIRA E RILASCIA');
   $('kickPower').style.transform='scaleX('+a.power+')';
   setText('kickPowerValue',Math.round(a.power*100)+'%');
 }
@@ -190,7 +206,7 @@ function frame(now){
   }else accumulator=0;
   if(now>noticeUntil)$('notice').classList.remove('show');
   if(now-hudAt>90){updateHud();hudAt=now;}
-  updateConversion();updateScrum();updateKick();
+  updateConversion();updateScrum();updateKick();updateCrowd();
   renderer.draw(match,dt,['live','scrum'].includes(match.phase)&&!paused?clamp(accumulator/STEP,0,1):1);
   frameId=requestAnimationFrame(frame);
 }

@@ -69,6 +69,27 @@ ha un fermo d’impatto di 65 ms, un’onda dorata e un suono dedicato quando l�
 Entrambe le squadre possono recuperare automaticamente il pallone; nessun nuovo comando.
 Corsa normale, passaggi e tempi reali di caricamento restano uguali per tutti.
 
+## Attacco in movimento
+
+Avvicinati a un difensore che ti sta venendo incontro e passa: deve completare
+il suo appoggio prima di girarsi verso il ricevitore. La copertura rimane libera.
+Dopo un passaggio corto, chi ha passato gira dietro al compagno per offrirsi
+all’esterno: l’anello azzurro e «UNO-DUE» indicano il ritorno disponibile.
+Puoi restituire la palla con PASSA oppure continuare la corsa e giocare sull’altro lato.
+
+Un tocco breve su CALCIA/L produce un rasoterra da inseguire: il pallone rimbalza
+basso e può essere raccolto anche lungo il tragitto, da entrambe le squadre.
+Tenendo premuto oltre circa 0,28 secondi si prepara invece un calcio alto.
+La mira mostra tipo e destinazione prima del rilascio; PASSA annulla.
+I compagni davanti al calciatore restano soggetti alle regole del fuorigioco.
+
+## Atmosfera della partita
+
+Quando il portatore supera quasi tutta la difesa, una scia discreta accompagna la corsa
+e il pubblico cresce avvicinandosi alla meta (con audio attivo). Alla segnatura
+compaiono raggi dorati e coriandoli pixel. Gli effetti non modificano velocità,
+placcaggi o punteggio e non richiedono comandi aggiuntivi.
+
 ## Stato del progetto
 
 Ricezioni in corsa, ripartenze senza riallineare le squadre, offload, mischie arcade

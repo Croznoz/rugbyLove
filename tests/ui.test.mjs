@@ -123,3 +123,60 @@ test('joystick keeps steering beyond its rim and ignores a second finger until r
  assert.ok(Math.hypot(active.controlled.vx,active.controlled.vy)<1);
  assert.equal(el('stick').style.transform,'translate(0px,0px)');
 });
+test('crowd reuses its loop and silences immediately on mute and hidden-tab pause',()=>{
+ let loops=0,lastVolume=null;
+ const param=()=>({value:0,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){},setTargetAtTime(value){lastVolume=value;}});
+ const node=()=>({connect(){},start(){},stop(){},frequency:param(),gain:param()});
+ window.AudioContext=class{
+  constructor(){this.state='running';this.sampleRate=8000;this.currentTime=0;this.destination={};}
+  createOscillator(){return node();}
+  createGain(){return node();}
+  createBiquadFilter(){return node();}
+  createBuffer(channels,length){return {getChannelData:()=>new Float32Array(length)};}
+  createBufferSource(){loops++;return node();}
+ };
+ start();active.tryScored(0);dispatch('sound','click');frame(2);
+ assert.equal(loops,1);assert.ok(lastVolume>0);
+ dispatch('sound','click');assert.equal(lastVolume,0);
+ dispatch('sound','click');frame(2);assert.equal(loops,1);assert.ok(lastVolume>0);
+ document.hidden=true;dispatch(documentEvents,'visibilitychange');
+ assert.equal(lastVolume,0);assert.equal(frames.size,0);
+ document.hidden=false;dispatch(documentEvents,'visibilitychange');
+ dispatch('sound','click');dispatch('resume','click');
+});
+test('touch and keyboard can complete a pass-and-return using the same pass button',()=>{
+ for(const control of ['touch','keyboard']){
+  start();for(const p of active.players)p.down=20;
+  const c=active.carrier,r=active.players[1];
+  Object.assign(c,{down:0,x:260,y:550,vx:0,vy:-78,px:260,py:550});
+  Object.assign(r,{down:0,x:330,y:580,vx:0,vy:-65,px:330,py:580});
+  if(control==='touch'){
+   dispatch('joystickArea','pointerdown',{pointerId:301,clientX:100,clientY:60});
+   dispatch('actionA','pointerdown',{pointerId:302});dispatch('actionA','pointerup',{pointerId:302});
+   dispatch('joystickArea','pointermove',{pointerId:301,clientX:60,clientY:20});
+  }else{
+   dispatch(windowEvents,'keydown',{code:'KeyD',repeat:false});dispatch(windowEvents,'keydown',{code:'KeyJ',repeat:false});
+   dispatch(windowEvents,'keyup',{code:'KeyJ'});dispatch(windowEvents,'keyup',{code:'KeyD'});
+   dispatch(windowEvents,'keydown',{code:'KeyW',repeat:false});
+  }
+  frame(80);assert.equal(active.carrierId,r.id,control);assert.ok(c.x>r.x);
+  if(control==='touch'){
+   dispatch('joystickArea','pointermove',{pointerId:301,clientX:100,clientY:60});
+   dispatch('actionA','pointerdown',{pointerId:303});dispatch('actionA','pointerup',{pointerId:303});
+   dispatch('joystickArea','pointerup',{pointerId:301});
+  }else{
+   dispatch(windowEvents,'keyup',{code:'KeyW'});dispatch(windowEvents,'keydown',{code:'KeyD',repeat:false});
+   dispatch(windowEvents,'keydown',{code:'KeyJ',repeat:false});dispatch(windowEvents,'keyup',{code:'KeyJ'});
+   dispatch(windowEvents,'keyup',{code:'KeyD'});
+  }
+  assert.equal(active.ball?.oneTwo,true,control);frame(32);assert.equal(active.carrierId,c.id,control);
+ }
+});
+test('touch tap and keyboard hold select grubber and high kick with matching labels',()=>{
+ start();dispatch('actionC','pointerdown',{pointerId:310});frame(2);
+ assert.match(el('kickType').textContent,/RASOTERRA/);
+ dispatch('actionC','pointerup',{pointerId:310});assert.equal(active.ball?.grubber,true);
+ start();dispatch(windowEvents,'keydown',{code:'KeyL',repeat:false});frame(22);
+ assert.match(el('kickType').textContent,/CALCIO ALTO/);
+ dispatch(windowEvents,'keyup',{code:'KeyL'});assert.equal(active.ball?.grubber,false);
+});
