@@ -70,7 +70,7 @@ export class Renderer{
     return canvas;
   }
   drawPlayer(c,p,x,y,selected,carrier){
-    c.save();c.translate(x,y);c.scale(1.35*p.profile.width,1.35*p.profile.height);
+    c.save();c.translate(x,y);c.scale(1.08*p.profile.width,1.08*p.profile.height);
     polygon(c,[[-8,4],[6,1],[36,20],[28,26]],'#355d5730');
     c.fillStyle='#355d5738';c.beginPath();c.ellipse(0,5,10,4,0,0,Math.PI*2);c.fill();
     if(selected){c.strokeStyle=ART.sun;c.lineWidth=1.5;c.beginPath();c.ellipse(0,4,14,6,0,0,Math.PI*2);c.stroke();}
@@ -110,7 +110,7 @@ export class Renderer{
   }
   drawStamina(c,p,x,y){
     // Draw after the players, outside their pose transforms: the meter stays horizontal.
-    const top=y-43*1.35*p.profile.height-12;
+    const top=y-43*1.08*p.profile.height-12;
     const energy=clamp(p.energy/p.profile.stamina,0,1),width=30*p.profile.stamina/100;
     c.save();c.translate(x,top);
     c.fillStyle='#e6f39a';c.beginPath();c.moveTo(-5,-11);c.lineTo(5,-11);c.lineTo(0,-5);c.fill();
@@ -120,7 +120,7 @@ export class Renderer{
     c.fillRect(-width/2,0,width*energy,4);c.restore();
   }
   drawOverhead(c,p,x,y){
-    c.save();c.translate(x,y);c.scale(p.profile.width,p.profile.height);c.rotate(p.facing<0?0:Math.PI);
+    c.save();c.translate(x,y);c.scale(.8*p.profile.width,.8*p.profile.height);c.rotate(p.facing<0?0:Math.PI);
     c.fillStyle='#173d2b70';c.beginPath();c.ellipse(2,3,13,10,0,0,Math.PI*2);c.fill();
     c.fillStyle=KITS[p.team].light;c.fillRect(-11,-6,22,12);
     c.fillStyle=KITS[p.team].body;c.fillRect(-7,-7,14,15);
