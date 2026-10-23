@@ -86,10 +86,16 @@ export class Match{
     const ax=len?(aim.x||0)/len:0,ay=len?(aim.y||0)/len:0;
     const directed=len>.25&&(Math.abs(ax)>.35||ay*d<0);
     const side=directed&&Math.abs(ax)>.35?Math.sign(ax):0;
-    const options=this.players.filter(p=>p.team===c.team&&p.id!==c.id&&p.down<=0&&(p.y-c.y)*d<=0&&distance(p,c)<320&&(!side||(p.x-c.x)*side>4));
+    let options=this.players.filter(p=>p.team===c.team&&p.id!==c.id&&p.down<=0&&(p.y-c.y)*d<=0&&distance(p,c)<320&&(!side||(p.x-c.x)*side>4));
     const alignment=p=>((p.x-c.x)*ax+(p.y-c.y)*ay)/Math.max(1,distance(p,c));
     const value=p=>this.passValue(p,c)+(directed?260*alignment(p):-distance(p,c)*.16)+(this.loopPoint(p,c)?18:0);
     options.sort((a,b)=>value(b)-value(a)||a.id-b.id);
+    // Prefer safety only among comparable supports, never a long retreat just to avoid risk.
+    if(!directed&&c.team===0&&options.length){
+      const best=options[0],clear=options.filter(p=>this.laneClearance(c,p)>=19&&
+        distance(p,c)<=distance(best,c)+30&&Math.abs(p.y-c.y)<=Math.abs(best.y-c.y)+12);
+      if(clear.length)options=clear;
+    }
     let chosen=options[0];const old=this.passSelection;
     // Modest hysteresis absorbs thumb jitter, but never keeps an illegal/wrong-side target.
     if(chosen&&old&&old.carrier===c.id&&old.directed===directed&&old.side===side&&(!directed||old.ax*ax+old.ay*ay>.96)){
@@ -730,7 +736,7 @@ export class Match{
       }else if(p.evade>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;speed=150*p.profile.agility*p.nation.agility;
       }else if(this.ball?.kind==='pass'&&p.id===this.ball.to){
         dx=this.ball.runX;dy=this.ball.runY;const run=Math.hypot(dx,dy)||1;dx/=run;dy/=run;speed=78;
-      }else if(p.id===this.selected&&!(this.ball?.kickoff&&!this.ball.landed&&Math.hypot(input.x||0,input.y||0)<.1&&chasers[p.team].indexOf(p)>=0&&chasers[p.team].indexOf(p)<2)){dx=input.x||0;dy=input.y||0;if(Math.hypot(dx,dy)<.1&&p.receiveUntil>this.elapsed){const run=Math.hypot(p.vx,p.vy)||1;dx=p.vx/run;dy=p.vy/run;}else if(Math.hypot(dx,dy)>=.1)p.receiveUntil=0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*28.8*(1+.25*clamp(p.runLoad/8,0,1)));}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
+      }else if(p.id===this.selected&&!(this.ball?.kind==='kick'&&Math.hypot(input.x||0,input.y||0)<.1&&chasers[p.team].indexOf(p)>=0&&chasers[p.team].indexOf(p)<2)){dx=input.x||0;dy=input.y||0;if(Math.hypot(dx,dy)<.1&&p.receiveUntil>this.elapsed){const run=Math.hypot(p.vx,p.vy)||1;dx=p.vx/run;dy=p.vy/run;}else if(Math.hypot(dx,dy)>=.1)p.receiveUntil=0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*28.8*(1+.25*clamp(p.runLoad/8,0,1)));}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
       }else if(p.id===this.carrierId&&!this.ball){
         const dir=this.dir(p.team);let repel=0;
         for(const d of defenders){if(d.down>0)continue;const ahead=(d.y-p.y)*dir;if(ahead>-15&&ahead<110)repel+=(p.x>=d.x?1:-1)*Math.max(0,75-Math.abs(p.x-d.x))*.025;}

@@ -303,3 +303,18 @@ test('unavailable tournament storage keeps play working and explains the limitat
  dispatch('quit','click');assert.equal(el('resumeTournament').hidden,false);
  el('gameMode').value='single';dispatch('gameMode','change');delete globalThis.localStorage;
 });
+
+test('touch and keyboard override neutral kick pursuit and release restores assistance',()=>{
+ for(const mode of ['touch','keyboard']){
+  start();for(const p of active.players)p.down=100;active.carrier.down=0;
+  active.kick({x:0,y:-1},.6);const p=active.controlled,y=p.y;
+  frame(7);assert.ok(p.y<y);
+  const x=p.x;
+  if(mode==='touch')dispatch('joystickArea','pointerdown',{pointerId:801,clientX:100,clientY:60});
+  else dispatch(windowEvents,'keydown',{code:'ArrowRight',repeat:false});
+  frame(7);assert.ok(p.x>x+2);
+  if(mode==='touch')dispatch('joystickArea','pointerup',{pointerId:801});
+  else dispatch(windowEvents,'keyup',{code:'ArrowRight'});
+  const before=p.y;frame(7);assert.ok(p.y<before);
+ }
+});

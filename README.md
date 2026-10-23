@@ -263,3 +263,21 @@ pareggi 0–0 da 8 a 0. Nessuna meta CPU in questo campione: il bot difende molt
 efficacemente. Questi numeri verificano progressione e completamento delle partite,
 non rappresentano le probabilità umane; il riferimento resta il riscontro del
 giocatore, che prima faticava a segnare anche una meta a Classica.
+
+## Aiuti di lettura e inseguimento
+
+Il passaggio automatico del giocatore preferisce una linea libera fra sostegni
+di distanza e profondità comparabili, evitando di arretrare molto solo per sicurezza;
+se orienti il joystick verso un compagno, la tua scelta rimane disponibile anche
+se rischiosa. Se tutte le linee sono marcate il passaggio resta consentito.
+Questo aiuto non modifica la scelta della CPU né la finestra degli offload.
+
+Anche durante i calci in azione, alti e rasoterra, il giocatore selezionato
+segue la palla con joystick neutro se è tra i due inseguitori abilitati più vicini.
+Un input direzionale riprende subito il controllo. Non aumenta la velocità,
+non salta automaticamente e non abilita giocatori in fuorigioco.
+
+La mira mostra «DIFESA VICINA» quando un avversario attivo si trova entro 80 unità
+dal punto di caduta, altrimenti «SPAZIO»: descrive la posizione attuale,
+non garantisce la ricezione. I suggerimenti ricordano quando sfondare e che lo
+scatto torna disponibile a 25 energia, mentre corsa normale e passaggi restano liberi.

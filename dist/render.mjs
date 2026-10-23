@@ -237,6 +237,10 @@ export class Renderer{
       c.fillStyle='#ffe29b';c.beginPath();c.moveTo(tx,ty);c.lineTo(tx-Math.cos(angle-.45)*17,ty-Math.sin(angle-.45)*17);c.lineTo(tx-Math.cos(angle+.45)*17,ty-Math.sin(angle+.45)*17);c.closePath();c.fill();
       c.beginPath();c.ellipse(tx,ty,15,8,0,0,Math.PI*2);c.stroke();
       c.font='bold 8px monospace';c.fillText(!a.kickoff&&a.power<=.32?'RASOTERRA':'MIRA',tx,ty-15);
+      const contested=match.players.some(q=>q.team!==p.team&&q.down<=0&&Math.hypot(q.x-tx,q.y-ty)<80);
+      c.fillStyle=contested?'#ffc27b':'#b8de78';c.font='bold 8px monospace';
+      c.fillText(contested?'DIFESA VICINA':'SPAZIO',tx,ty+24);
+
     }
     if(match.contestWindow()){
       const p=match.controlled,b=match.ball,remaining=b.duration-b.t,good=Math.abs(remaining-.35)<.15;

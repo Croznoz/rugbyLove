@@ -34,6 +34,6 @@ test('brief descent slowdown is 70 percent, pause freezes it and capture restore
 test('opponent also jumps, and jumping out of range cannot steal a ball',()=>{
  const m=setup(.34),q=m.players[7];m.controlled.x=100;q.x=360;q.y=660;
  m.step(1/120);assert.ok(q.jump>0);
- const n=setup();n.contest();n.controlled.x=410;for(let i=0;i<100;i++)n.step(1/120);
+ const n=setup();n.contest();n.controlled.x=410;for(let i=0;i<100;i++)n.step(1/120,{x:1,y:0});
  assert.ok(n.ball);assert.equal(n.controlled.jump,0);
 });

@@ -115,9 +115,13 @@ function updateHud(){
   $('labelA').textContent=match.phase==='contact'&&match.possession===0?'OFFLOAD':match.possession===0&&!match.loose?'PASSA':'CAMBIA';$('labelB').textContent=match.loose?'SCATTO':match.possession===0?(Math.abs(directionInput().x)>.55&&Math.abs(directionInput().x)>Math.abs(directionInput().y)*1.25?'SCHIVA':'SFONDA'):match.controlled.brace?'CONTIENI':'PLACCA';
   $('direction').textContent='ATTACCA '+(match.attackDir<0?'↑':'↓');$('playerNumber').textContent=String(match.controlled.number).padStart(2,'0');$('playerName').textContent=roles[match.controlled.slot]+' · '+match.controlled.profile.label;
   $('stamina').style.transform='scaleX('+(Math.min(1,match.controlled.energy/match.controlled.profile.stamina))+')';
-  $('controlHint').textContent=match.loose?'INSEGUI E RECUPERA.':match.possession===0?(match.phase==='contact'?'A ORA: LIBERA LA PALLA':'INDICA IL COMPAGNO · PREMI PASSA'):'TOCCA: PLACCA · TIENI: CONTIENI';
+  $('controlHint').textContent=match.loose?(match.ball.kind==='kick'?'JOYSTICK NEUTRO: AIUTO INSEGUIMENTO':'INSEGUI E RECUPERA.'):match.possession===0?(match.phase==='contact'?'A ORA: LIBERA LA PALLA':'INDICA IL COMPAGNO · PREMI PASSA'):'TOCCA: PLACCA · TIENI: CONTIENI';
   $('actionA').setAttribute('aria-label',match.possession===0&&!match.loose?'Passa al compagno evidenziato':'Seleziona il difensore meglio posizionato');
   $('actionB').setAttribute('aria-label',match.loose?'Scatto: tieni premuto':match.possession===0?'Tocca per sfondare, orienta di lato per schivare; tieni per scattare':'Tocca e rilascia per placcare; tieni premuto per contenere');
+  if(match.phase==='live'&&!match.ball&&match.possession===0){
+    if(match.chargeReady())$('controlHint').textContent='SFONDA ORA · TOCCA B';
+    else if(match.controlled.exhausted)$('controlHint').textContent='SCATTO A 25 ENERGIA · PASSA O CORRI';
+  }
   if(match.contestWindow()){
     $('labelB').textContent='CONTENDI';$('actionB').disabled=paused||!match.canContest();
     $('actionB').setAttribute('aria-label','Contendi: premi per saltare e prendere il pallone alto');
