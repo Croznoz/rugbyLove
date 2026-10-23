@@ -16,8 +16,8 @@ test('CONTENDI requires descending high ball, proximity, legal position and avai
  const n=setup();n.selected=1;n.controlled.x=360;n.controlled.y=650;n.ball.eligible=[0];assert.equal(n.canContest(),false);
 });
 test('one press jumps once and holding cannot repeat or consume more energy',()=>{
- const m=setup();m.beginSpecial();assert.equal(m.controlled.jump,.6);assert.equal(m.controlled.energy,92);
- m.beginSpecial();m.releaseSpecial();assert.equal(m.controlled.energy,92);assert.equal(m.controlled.burst,0);
+ const m=setup();m.beginSpecial();assert.equal(m.controlled.jump,.6);assert.equal(m.controlled.energy,m.controlled.profile.stamina-8);
+ m.beginSpecial();m.releaseSpecial();assert.equal(m.controlled.energy,m.controlled.profile.stamina-8);assert.equal(m.controlled.burst,0);
 });
 test('jump allows a high catch; passive recovery still works lower down',()=>{
  const m=setup();m.contest();let high=false;

@@ -4,7 +4,7 @@ import {Match,FIELD,distance} from '../dist/engine.mjs';
 const live=()=>{const m=new Match();m.reset();m.phase='live';m.guard=0;m.passCooldown=0;m.events=[];return m;};
 const tick=(m,seconds,input={x:0,y:0})=>{for(let i=0;i<Math.ceil(seconds*120);i++)m.step(1/120,input);};
 test('timed forward charge breaks one tackle, consumes stamina, preserves possession',()=>{
- const m=live(),c=m.carrier,d=m.players[7];d.x=c.x;d.y=c.y-17;m.special({x:0,y:-1});assert.equal(c.energy,64);m.tackle(d);
+ const m=live(),c=m.carrier,d=m.players[7];d.x=c.x;d.y=c.y-17;m.special({x:0,y:-1});assert.equal(c.energy,c.profile.stamina-36);m.tackle(d);
  assert.equal(m.phase,'live');assert.equal(m.possession,0);assert.equal(m.stats.breaks[0],1);assert.equal(m.tackles,0);assert.ok(d.down>0);assert.equal(c.charge,0);
  m.guard=0;m.tackle(m.players[8]);if(m.phase==='contact')m.step(.35);assert.equal(m.phase,'ruck');assert.equal(m.tackles,1);
 });

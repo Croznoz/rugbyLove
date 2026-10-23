@@ -28,6 +28,7 @@ for(const [label,w,h] of [['desktop',1100,480],['mobile',358,470],['landscape',6
  else if(label==='kick'){m.kick(.5);for(let i=0;i<60;i++)m.step(1/120);}
  else for(let i=0;i<140;i++)m.step(1/120,{x:-.4,y:-1});
  if(label.startsWith('stamina-'))m.controlled.energy=label==='stamina-medium'?45:label==='stamina-low'?20:0;
+ if(w<650&&Math.abs(r.zoom-w/720)>1e-12)throw new Error('Mobile camera must preserve player size after field shrink');
  if(r.playerScale!==(label==='desktop'?1:1.1))throw new Error('Incorrect device player scale');
  r.draw(m,1,1);await writeFile(output+'/'+label+'-field.png',canvas.toBuffer('image/png'));
  console.log('Canvas rendered:',label,w,h);

@@ -84,7 +84,7 @@ test('fullback always remains deepest and wings stay widest on both sides',()=>{
   assert.equal(fullback.role,'cover');
   for(const wing of [defenders[4],defenders[5]]){
    const point=plan.points.get(wing.id);
-   if(point.role==='mark')assert.ok(Math.abs(point.x-FIELD.width/2)>300,'wings hold the touchline channel');
+   if(point.role==='mark')assert.ok(Math.abs(point.x-FIELD.width/2)>300*(FIELD.width/720),'wings hold the touchline channel');
    assert.ok((fullback.y-point.y)*forward>60,'15 stays deeper toward own try line than the wings');
   }
   assert.ok((fullback.y-c.y)*forward>150,'fullback covers well behind the defensive line');

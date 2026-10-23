@@ -8,8 +8,8 @@ function setup(dir=1){
 }
 function hit(dir=1){const s=setup(dir);s.m.special();s.m.tackle(s.d,true);return s;}
 test('manual frontal powerful tackle dislodges ball with one 25-point cost in both halves',()=>{
- for(const dir of [-1,1]){const {m,c,d}=hit(dir);assert.equal(m.ball.kind,'fumble');assert.ok(m.loose);assert.equal(d.energy,65);assert.equal(d.dominantReadyAt,6);assert.equal(m.stats.tackles[0],1);assert.equal(m.phase,'live');assert.equal(m.contact,null);assert.ok(c.down>0&&d.down>0);assert.equal(m.possession,1);assert.deepEqual(m.stats.kicks,[0,0]);
-  m.tackle(d,true);assert.equal(d.energy,65);assert.equal(m.stats.tackles[0],1);
+ for(const dir of [-1,1]){const {m,c,d}=hit(dir);assert.equal(m.ball.kind,'fumble');assert.ok(m.loose);assert.equal(d.energy,d.profile.stamina-25);assert.equal(d.dominantReadyAt,6);assert.equal(m.stats.tackles[0],1);assert.equal(m.phase,'live');assert.equal(m.contact,null);assert.ok(c.down>0&&d.down>0);assert.equal(m.possession,1);assert.deepEqual(m.stats.kicks,[0,0]);
+  m.tackle(d,true);assert.equal(d.energy,d.profile.stamina-25);assert.equal(m.stats.tackles[0],1);
  }
 });
 test('automatic, rear, lateral, low-energy, cooldown and non-powerful tackles stay ordinary',()=>{

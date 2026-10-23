@@ -28,7 +28,8 @@ export class Renderer{
   resize(){
     const r=this.canvas.getBoundingClientRect();this.width=Math.max(1,r.width);this.height=Math.max(1,r.height);this.dpr=Math.min(window.devicePixelRatio||1,2);
     this.playerScale=window.matchMedia?.('(pointer: coarse)').matches&&Math.min(window.innerWidth||this.width,window.innerHeight||this.height)<650?1.1:1;
-    this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.zoom=this.width<650?this.width/FIELD.width:Math.min(1.65,this.width/720);this.ctx.imageSmoothingEnabled=true;
+    // Keep the previous 720-unit camera scale: shrinking the pitch must not enlarge players.
+    this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.zoom=Math.min(1.65,this.width/720);this.ctx.imageSmoothingEnabled=true;
   }
   makeField(){
     const canvas=document.createElement('canvas');canvas.width=FIELD.width+320*FIELD.width/480;canvas.height=FIELD.height+160*FIELD.height/880;

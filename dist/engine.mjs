@@ -1,13 +1,13 @@
 import {teamPair,matchKits} from './teams.mjs';
-export const FIELD={width:720,height:1320,left:51,right:669,top:127.5,bottom:1192.5,inGoalTop:45,inGoalBottom:1275};
+export const FIELD={width:684,height:1254,left:48.45,right:635.55,top:121.125,bottom:1132.875,inGoalTop:42.75,inGoalBottom:1211.25};
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const CARRIER_PACE=.82;
 // Fixed role profiles: appearance and action bonuses never alter normal running or passing.
 export const PROFILES=Object.freeze({
-  powerful:Object.freeze({label:'POTENTE',stamina:90,width:1.15,height:1.08,sprint:1.28,agility:.95,charge:1.12,tackle:1.1,kick:1}),
-  agile:Object.freeze({label:'AGILE',stamina:120,width:1,height:1,sprint:1.43,agility:1.1,charge:.9,tackle:1,kick:1}),
-  playmaker:Object.freeze({label:'REGISTA',stamina:100,width:1.05,height:1.04,sprint:1.35,agility:1,charge:1,tackle:1,kick:1.35})
+  powerful:Object.freeze({label:'POTENTE',stamina:99,width:1.15,height:1.08,sprint:1.28,agility:.95,charge:1.12,tackle:1.1,kick:1}),
+  agile:Object.freeze({label:'AGILE',stamina:132,width:1,height:1,sprint:1.43,agility:1.1,charge:.9,tackle:1,kick:1}),
+  playmaker:Object.freeze({label:'REGISTA',stamina:110,width:1.05,height:1.04,sprint:1.35,agility:1,charge:1,tackle:1,kick:1.35})
 });
 const ROLE_PROFILES=['playmaker','playmaker','powerful','powerful','agile','agile','agile'];
 const NUMBERS=[9,10,12,13,11,14,15];
@@ -73,7 +73,7 @@ export class Match{
     this.phase='live';this.passSelection=null;this.kickAim=null;
     p.kickAnim=.4;p.kickCd=1.2;
     this.ball={kind:'kick',kickoff:true,x:p.x,y:p.y,sx:p.x,sy:p.y,
-      tx:FIELD.width/2,ty:FIELD.height/2+dir*216,from:p.id,team:p.team,t:0,duration:1.65,groundTime:0,
+      tx:FIELD.width/2,ty:FIELD.height/2+dir*216*1.05,from:p.id,team:p.team,t:0,duration:1.65,groundTime:0,
       eligible:this.players.filter(a=>a.team===p.team&&(a.y-p.y)*dir<=0).map(a=>a.id)};
     this.prepareHighKickoff(this.ball);
     this.guard=0;this.passCooldown=0;this.stats.kicks[p.team]++;
@@ -259,9 +259,10 @@ export class Match{
     return this.kick({x:a.x,y:a.y},a.power,a.kickoff);
   }
   kickTarget(aim,power=.5){
-    const p=this.carrier,kick=p.profile.kick*p.nation.kick;
+    const p=this.carrier,kick=p.profile.kick*p.nation.kick*1.05;
     if(typeof aim==='number')return {tx:clamp(p.x+clamp(aim,-1,1)*150*kick,FIELD.left+12,FIELD.right-12),ty:clamp(p.y+this.dir(p.team)*252*kick,FIELD.top-12,FIELD.bottom+12)};
-    const length=Math.hypot(aim.x,aim.y)||1,range=(aim.kickoff?110+clamp(power,0,1)*200:power<=.32?70+clamp(power,0,.32)*120:110+clamp(power,0,1)*200)*(FIELD.height/1100)*kick;
+    // Retain the old pitch-length reference so the smaller field does not cancel the range bonus.
+    const length=Math.hypot(aim.x,aim.y)||1,range=(aim.kickoff?110+clamp(power,0,1)*200:power<=.32?70+clamp(power,0,.32)*120:110+clamp(power,0,1)*200)*(1320/1100)*kick;
     const tx=clamp(p.x+aim.x/length*range,FIELD.left+12,FIELD.right-12);
     let ty=clamp(p.y+aim.y/length*range,FIELD.top-12,FIELD.bottom+12);
     if(aim.kickoff){const half=FIELD.height/2,minimum=71,dir=this.dir(p.team);ty=dir<0?Math.min(ty,half-minimum):Math.max(ty,half+minimum);}

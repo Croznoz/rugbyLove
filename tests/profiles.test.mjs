@@ -49,11 +49,24 @@ test('profile capacity changes real sprint endurance and recovery stops at each 
 test('playmaker kick has 35 percent more range at every charge level and respects field limits',()=>{
  for(const dir of [-1,1])for(const power of [.25,.5,1]){
   const normal=setup(PROFILES.agile),regista=setup(PROFILES.playmaker);
-  normal.attackDir=regista.attackDir=dir;
+  normal.attackDir=regista.attackDir=dir;normal.carrier.y=regista.carrier.y=FIELD.height/2-dir*60;
   const a=normal.kickTarget({x:0,y:dir},power),b=regista.kickTarget({x:0,y:dir},power);
   assert.ok(Math.abs(distance(regista.carrier,{x:b.tx,y:b.ty})/distance(normal.carrier,{x:a.tx,y:a.ty})-1.35)<.0001);
   regista.carrier.y=dir<0?120:980;regista.beginKick({x:0,y:dir});regista.updateKickAim(3,{x:0,y:dir});
   const preview=regista.kickTarget(regista.kickAim,regista.kickAim.power);regista.releaseKick();
   assert.equal(regista.ball.ty,preview.ty);assert.ok(regista.ball.ty>=FIELD.top-12&&regista.ball.ty<=FIELD.bottom+12);
  }
+});
+
+test('field shrinks five percent, stamina grows ten percent and kick reach grows five percent independently',()=>{
+ const oldField={width:720,height:1320,left:51,right:669,top:127.5,bottom:1192.5,inGoalTop:45,inGoalBottom:1275};
+ for(const [key,old] of Object.entries(oldField))assert.ok(Math.abs(FIELD[key]/old-.95)<1e-12);
+ assert.equal(PROFILES.playmaker.stamina,110);assert.equal(PROFILES.powerful.stamina,99);assert.equal(PROFILES.agile.stamina,132);
+ for(const dir of [-1,1])for(const power of [.25,.5,1]){
+  const m=setup(PROFILES.playmaker);m.attackDir=dir;m.carrier.y=FIELD.height/2-dir*80;
+  const target=m.kickTarget({x:0,y:dir},power);
+  const oldRange=(power<=.32?70+power*120:110+power*200)*1.2*1.35;
+  assert.ok(Math.abs(distance(m.carrier,{x:target.tx,y:target.ty})/oldRange-1.05)<1e-10);
+ }
+ const cpu=new Match();cpu.lineup(1);const y=cpu.carrier.y;cpu.launchKickoff();assert.ok(Math.abs(Math.abs(cpu.ball.ty-y)-216*1.05)<1e-10);
 });

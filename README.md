@@ -1,7 +1,7 @@
 # rugbyLove
 
 Progetto completo di rugby arcade 7 contro 7, esportato il 21 ottobre 2026.
-Campo ampliato del 20% in larghezza e lunghezza per favorire le manovre.
+Campo attuale di 684 × 1254 unità, ridotto del 5% in larghezza e lunghezza rispetto alla versione precedente.
 Versione sorgente: `624030572eda7c7136c26fde5a3b4c7866d5ba41`.
 
 ## Aprire con Codex
@@ -58,7 +58,7 @@ Profili fissi e uguali per entrambe le squadre: 9 e 10 registi, 12 e 13 potenti,
 I potenti hanno corporatura più robusta, una finestra di sfondamento più lunga
 e placcaggi più pronti; gli agili scattano e schivano più velocemente;
 i registi calciano il 35% più lontano, mantenendo la mira esatta mostrata a schermo.
-Riserva di stamina: agili 120, registi 100, potenti 90. La lunghezza della barra
+Riserva di stamina: agili 132, registi 110, potenti 99. La lunghezza della barra
 rappresenta la capacità; il riempimento indica l’energia residua. I costi delle azioni
 restano in punti, quindi una riserva maggiore permette uno sforzo più lungo.
 Il Potente può provocare un pallone libero con un placcaggio manuale frontale
@@ -214,3 +214,14 @@ modificatori nazionali su una scala da −10% a +10%, con tacca centrale sulla
 base e percentuali esplicite; non sono voti inventati né classifiche reali. Restano il font, la palette e i
 comandi del gioco. Questa modifica riguarda il menu; la modalità disponibile
 è ancora partita singola, indicata sotto il titolo.
+
+
+## Ritocco campo, stamina e calci
+
+Capacità di ogni ruolo aumentata del 10%: Regista 110, Potente 99, Agile 132.
+Campo e linee ridotti del 5% su entrambi gli assi. La scala della telecamera su
+smartphone resta quella precedente per non ingrandire i giocatori sullo schermo.
+Distanza dei calci aumentata del 5%, inclusi rasoterra e ripartenze automatiche;
+la portata è indipendente dalla riduzione del campo e resta limitata dai bordi.
+Costi delle azioni, recupero, velocità, dimensioni dei giocatori e tempi di mira
+rimangono invariati. Le conversioni mantengono il minigioco esistente.

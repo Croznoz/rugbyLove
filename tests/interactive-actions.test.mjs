@@ -21,8 +21,8 @@ test('a braced defender stops a frontal charge instead of being knocked down',()
  assert.equal(m.stats.breaks[1],0);assert.equal(c.charge,0);assert.equal(c.burst,0);assert.ok(m.phase==='contact'||m.phase==='ruck');
 });
 test('lateral action sidesteps with energy and cooldown, forward action remains a charge',()=>{
- const m=setup(),p=m.carrier,x=p.x;m.guard=99;m.special({x:1,y:0});assert.equal(p.energy,82);assert.equal(p.charge,0);assert.ok(p.evade>0);
- m.special({x:1,y:0});assert.equal(p.energy,82);tick(m,22);assert.ok(p.x>x+15);
+ const m=setup(),p=m.carrier,x=p.x;m.guard=99;m.special({x:1,y:0});assert.equal(p.energy,p.profile.stamina-18);assert.equal(p.charge,0);assert.ok(p.evade>0);
+ m.special({x:1,y:0});assert.equal(p.energy,p.profile.stamina-18);tick(m,22);assert.ok(p.x>x+15);
  const n=setup();n.special({x:0,y:-1});assert.ok(n.carrier.charge>0);assert.equal(n.carrier.evade,0);
 });
 test('automatic tackle has a readable wind-up and misses a lateral escape',()=>{
