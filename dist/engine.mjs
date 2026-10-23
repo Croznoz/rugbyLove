@@ -3,7 +3,6 @@ export const FIELD={width:720,height:1320,left:51,right:669,top:127.5,bottom:119
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const CARRIER_PACE=.82;
-const EXHAUSTED_PACE=.48;
 // Fixed role profiles: appearance and action bonuses never alter normal running or passing.
 export const PROFILES=Object.freeze({
   powerful:Object.freeze({label:'POTENTE',stamina:90,width:1.15,height:1.08,sprint:1.28,agility:.95,charge:1.12,tackle:1.1,kick:1}),
@@ -47,7 +46,8 @@ export class Match{
       if(running&&!sprint&&p.runLoad>2){
         this.spendEnergy(p,dt*(.8+2.2*clamp((p.runLoad-2)/8,0,1)));
       }else if(!running&&!sprint&&p.energyWait===0&&p.charge<=0&&p.dive<=0&&p.burst<=0&&p.evade<=0&&p.kickAnim<=0){
-        p.energy=clamp(p.energy+dt*(moving?4:12)*p.nation.recovery,0,p.profile.stamina);
+        const carrying=!this.ball&&p.id===this.carrierId&&['live','contact','kickoff','try'].includes(this.phase);
+        p.energy=clamp(p.energy+dt*(moving?4:12)*p.nation.recovery*(carrying?1:1.09),0,p.profile.stamina);
       }
     }
   }
@@ -753,7 +753,6 @@ export class Match{
       if(p.jump>0)speed*=.65;
       if(p.brace){speed*=.6;this.spendEnergy(p,dt*5);}
       if(p.tackleWind>0&&p.dive<=0&&!chasing)speed*=.45;
-      if(p.exhausted&&!chasing)speed*=EXHAUSTED_PACE;
       // Carrying the ball costs a little pace for both teams. Dedicated dive
       // and sidestep moves keep their own short action speeds.
       if(!this.ball&&p.id===this.carrierId&&p.dive<=0&&p.evade<=0)speed*=CARRIER_PACE;

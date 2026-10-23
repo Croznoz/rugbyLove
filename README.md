@@ -122,9 +122,9 @@ placcaggi o punteggio e non richiedono comandi aggiuntivi.
 Ricezioni in corsa, ripartenze senza riallineare le squadre, offload, mischie arcade
 opzionali con difesa automatica, passaggi direzionati e difesa assistita.
 Energia individuale: la corsa continua consuma gradualmente energia dopo due secondi;
-lo scatto consuma il 20% in più e lo sfondamento costa 36 punti. A barra vuota la
-velocità si dimezza finché non recuperi almeno 25 punti. Placcaggi, calci, schivate e sfondamenti
-mantengono i propri costi. Recupero automatico nelle pause, più rapido da fermo.
+lo scatto consuma il 20% in più e lo sfondamento costa 36 punti. A barra vuota lo
+scatto resta sospeso finché non recuperi almeno 25 punti; la corsa normale mantiene la velocità. Placcaggi, calci, schivate e sfondamenti
+mantengono i propri costi. Recupero automatico nelle pause, più rapido da fermo e del 9% più veloce senza palla (per entrambe le squadre, cumulato con il bonus nazionale).
 La velocità della corsa normale resta invariata e i passaggi restano gratuiti. Nessuna ruck interattiva.
 
 Questa copia contiene il nostro gioco; non contiene i file del gioco commerciale
@@ -181,9 +181,26 @@ confondibili. Nessuna immagine, libreria o connessione aggiuntiva richiesta.
 - `npm run check:nations`: 30 abbinamenti a difficile, con giocatore scriptato,
   seed fisso e tempi da 30 secondi; salva `qa/nations-check.json`. Verifica che
   le partite finiscano e che le coordinate restino valide, non misura le
-  probabilità di vittoria di un giocatore umano. Nel controllo iniziale il bot
-  ha ottenuto 16 pareggi e 14 sconfitte: il bilanciamento competitivo richiede
+  probabilità di vittoria di un giocatore umano. Il bilanciamento competitivo richiede
   ancora partite giocate, non è certificato dalle simulazioni.
 
 Questa prima fase comprende la partita singola; calendario e classifica del
 torneo non sono ancora implementati. Nessuna pubblicazione del sito originale.
+
+
+## Recupero senza palla e verifica Classica
+
+Chi non porta la palla recupera energia il 9% più velocemente, quando il recupero
+è già consentito (fermo o movimento lento). Vale per entrambe le squadre, anche
+per il passatore durante il volo del pallone. Il bonus moltiplica quello nazionale;
+non elimina l'attesa dopo un'azione, non ricarica durante uno scatto e non supera
+la capacità del ruolo. La stamina esaurita impedisce lo scatto ma non rallenta più
+la corsa ordinaria; passaggi sempre gratuiti.
+
+`npm run check:nations -- normal 60` simula i 30 abbinamenti a Classica con due
+tempi da un minuto. Il bot sceglie spazio davanti a sé, scatta, sfonda e passa
+sotto pressione; identico nelle due versioni confrontate, con seed 2026.
+Nel confronto del 23 ottobre 2026 gli 0–0 sono scesi da 23 a 12 su 30 partite,
+le mete del bot sono passate da 7 a 22. Italia–Irlanda: da 0–0 a 7–0.
+È una verifica automatica del motore, non una prova su smartphone né una stima
+della probabilità di vittoria umana; in questo campione la CPU non ha segnato.
