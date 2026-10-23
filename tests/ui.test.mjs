@@ -269,3 +269,37 @@ test('Six Nations selection updates flags and real stat meters for touch and key
  assert.equal(el('awayValuerecovery').textContent,'+6%');
  el('homeNation').value='ita';el('awayNation').value='irl';dispatch('homeNation','change');
 });
+
+test('Six Nations completes five fixtures, persists once per round and resumes interrupted games',()=>{
+ const memory=new Map();globalThis.localStorage={getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)};
+ dispatch('quit','click');el('gameMode').value='tournament';el('homeNation').value='ita';dispatch('gameMode','change');
+ assert.equal(el('awayNation').disabled,true);assert.equal(el('tournamentInfo').hidden,false);
+ dispatch('start','click');const opponents=[];
+ for(let r=0;r<5;r++){
+  opponents.push(active.teams[1].id);
+  assert.equal(active.teams[0].id,'ita');
+  if(r===1){
+   const opponent=active.teams[1].id;dispatch('quit','click');
+   assert.equal(el('resumeTournament').hidden,false);dispatch('resumeTournament','click');assert.equal(active.teams[1].id,opponent);
+  }
+  active.phase='live';active.half=2;active.time=0;active.score=[7,0];active.stats.tries=[1,0];frame(3);
+  assert.equal(active.state,'finished');assert.equal(el('tournamentResult').hidden,false);
+  const saved=JSON.parse([...memory.values()][0]);assert.equal(saved.results.length,(r+1)*3);
+  frame(3);assert.equal(JSON.parse([...memory.values()][0]).results.length,(r+1)*3);
+  assert.equal(el('winnerCup').hidden,r<4);
+  if(r<4){assert.match(el('replay').textContent,/PROSSIMA/);dispatch('replay','click');}
+ }
+ assert.equal(new Set(opponents).size,5);assert.match(el('roundTitle').textContent,/ITALIA/);assert.match(el('nextFixture').textContent,/1°/);
+ assert.equal(el('standingPoints0').textContent,23);assert.equal(el('tournamentCalendar').textContent.split('\n').length,5);
+ dispatch('resultMenu','click');assert.equal(el('resumeTournament').hidden,true);
+ el('gameMode').value='single';dispatch('gameMode','change');dispatch('start','click');assert.equal(el('awayNation').disabled,false);
+ active.phase='live';active.half=2;active.time=0;frame(3);assert.equal(el('tournamentResult').hidden,true);
+});
+
+test('unavailable tournament storage keeps play working and explains the limitation',()=>{
+ globalThis.localStorage={getItem:()=>null,setItem:()=>{throw new Error('quota');}};
+ dispatch('quit','click');el('gameMode').value='tournament';dispatch('gameMode','change');dispatch('start','click');
+ assert.equal(active.state,'playing');assert.equal(el('saveStatus').hidden,false);assert.match(el('saveStatus').textContent,/questa scheda/);
+ dispatch('quit','click');assert.equal(el('resumeTournament').hidden,false);
+ el('gameMode').value='single';dispatch('gameMode','change');delete globalThis.localStorage;
+});

@@ -145,7 +145,7 @@ I calci d’inizio e dopo meta sono sempre alti, anche con un tocco breve: la po
 Quando una palla alta scende vicino al giocatore, B / K / spazio diventa CONTENDI: premi per saltare. L’anello verde indica il momento migliore; posizione e tempismo migliorano la presa senza garantirla. Costa 8 energia, con un breve recupero prima di riprovare. Anche gli avversari contendono. Nella finestra finale di 0,65 secondi di simulazione il gioco procede al 70%, solo se sei vicino e abilitato alla contesa; risale subito alla velocità normale dopo ricezione o atterraggio. Senza premere, il recupero rimane automatico.
 
 
-## Sei nazionali · partita singola
+## Sei nazionali
 
 Dal menu scegli Italia, Francia, Irlanda, Inghilterra, Scozia o Galles e la tua
 avversaria. La scelta resta disponibile per rivincita e ritorno al menu. Non si
@@ -184,8 +184,7 @@ confondibili. Nessuna immagine, libreria o connessione aggiuntiva richiesta.
   probabilità di vittoria di un giocatore umano. Il bilanciamento competitivo richiede
   ancora partite giocate, non è certificato dalle simulazioni.
 
-Questa prima fase comprende la partita singola; calendario e classifica del
-torneo non sono ancora implementati. Nessuna pubblicazione del sito originale.
+Il menu offre partita singola e torneo Six Nations. Il sito originale Sites resta separato.
 
 
 ## Recupero senza palla e verifica Classica
@@ -225,3 +224,42 @@ Distanza dei calci aumentata del 5%, inclusi rasoterra e ripartenze automatiche;
 la portata è indipendente dalla riduzione del campo e resta limitata dai bordi.
 Costi delle azioni, recupero, velocità, dimensioni dei giocatori e tempi di mira
 rimangono invariati. Le conversioni mantengono il minigioco esistente.
+
+
+## Attacco più accessibile e Six Nations
+
+I sostegni giocano meno profondi: il ricevitore si orienta in avanti durante il
+passaggio, anche se prima stava arretrando. Dopo la ricezione prosegue per 0,3 secondi
+con joystick neutro; un input direzionale riprende immediatamente il controllo.
+Non riceve un bonus di velocità. La finestra offload resta di 0,34 secondi.
+«SFONDA ORA» segnala un difensore frontale a distanza utile quando hai energia;
+durante la mira, «INSEGUI» evidenzia il giocatore abilitato più vicino alla destinazione.
+
+La CPU corre alla stessa velocità ordinaria nelle tre difficoltà. Cambiano i tempi
+di lettura, riposizionamento e preparazione del placcaggio: a Classica il contrasto
+automatico prepara per 0,24 secondi prima dei modificatori del ruolo e della nazionale.
+Il bonus di inseguimento CPU diminuisce con la distanza; un difensore vicino può
+ancora recuperare il portatore. Un passaggio azzera la preparazione dei soli
+difensori vicini al passatore, lasciando attiva la copertura lontana.
+
+Six Nations comprende cinque giornate: affronti una volta ciascuna delle altre
+nazionali. Durata, difficoltà e mischie rimangono quelle scelte all'inizio.
+Classifica: vittoria 4 punti, pareggio 2; bonus per quattro mete e sconfitta entro
+sette punti; cinque vittorie danno altri 3 punti. Pari punti: differenza punti,
+poi mete; ulteriore parità condivisa. Le altre due partite della giornata sono
+simulate con punteggi arcade bassi, indipendentemente dal risultato del giocatore.
+Calendario, classifica e coppa finale sono consultabili dopo la partita.
+La regola dei bonus segue il [sistema Six Nations](https://www.sixnationsrugby.com/en/m6n/championship-history-mens);
+il calendario e i risultati sono quelli del gioco.
+
+Il torneo si salva nel browser dopo ogni giornata. «Riprendi» conserva risultati
+e impostazioni: una partita lasciata a metà ricomincia dall'inizio senza aggiungere
+risultati. Se lo storage non è disponibile, la sessione prosegue nella scheda e
+il menu mostra un avviso. Iniziare un nuovo torneo sostituisce quello salvato.
+
+Verifica del 23 ottobre: 30 abbinamenti Classica con due tempi da 60 secondi,
+stesso bot e seed 2026: mete del bot da 23 a 59, passaggi da 2694 a 1363,
+pareggi 0–0 da 8 a 0. Nessuna meta CPU in questo campione: il bot difende molto
+efficacemente. Questi numeri verificano progressione e completamento delle partite,
+non rappresentano le probabilità umane; il riferimento resta il riscontro del
+giocatore, che prima faticava a segnare anche una meta a Classica.

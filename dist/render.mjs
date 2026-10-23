@@ -204,6 +204,10 @@ export class Renderer{
         c.strokeStyle='#8ddcff';c.lineWidth=1.7;c.setLineDash([3,3]);c.beginPath();c.ellipse(next.x,next.y+2,15,7,0,0,Math.PI*2);c.stroke();c.setLineDash([]);
       }
     }
+    if(match.chargeReady()){
+      const p=match.carrier;c.fillStyle='#14271ff0';c.fillRect(p.x-37,p.y-78,74,15);
+      c.fillStyle='#ffe29b';c.font='bold 9px monospace';c.fillText('SFONDA ORA',p.x,p.y-67);
+    }
     if(match.perfectTackleReady()){
       const p=match.carrier;
       c.strokeStyle='#ffe29b';c.lineWidth=2.5;
@@ -226,6 +230,8 @@ export class Renderer{
     }
     if(match.kickAim){
       const a=match.kickAim,p=match.carrier,{tx,ty}=match.kickTarget(a,a.power);
+      const runner=match.previewChaser();
+      if(runner){c.strokeStyle='#8ddcff';c.lineWidth=2;c.beginPath();c.ellipse(runner.x,runner.y+3,19,8,0,0,Math.PI*2);c.stroke();c.fillStyle='#8ddcff';c.font='bold 8px monospace';c.fillText('INSEGUI '+runner.number,runner.x,runner.y-58);}
       const angle=Math.atan2(ty-p.y,tx-p.x);
       c.strokeStyle='#ffe29b';c.lineWidth=2.5;c.setLineDash([7,5]);c.beginPath();c.moveTo(p.x,p.y);c.lineTo(tx,ty);c.stroke();c.setLineDash([]);
       c.fillStyle='#ffe29b';c.beginPath();c.moveTo(tx,ty);c.lineTo(tx-Math.cos(angle-.45)*17,ty-Math.sin(angle-.45)*17);c.lineTo(tx-Math.cos(angle+.45)*17,ty-Math.sin(angle+.45)*17);c.closePath();c.fill();

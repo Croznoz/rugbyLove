@@ -28,7 +28,7 @@ test('lateral action sidesteps with energy and cooldown, forward action remains 
 test('automatic tackle has a readable wind-up and misses a lateral escape',()=>{
  const m=setup(),c=m.carrier,d=m.players[7];m.players.filter(p=>p.team===1&&p!==d).forEach(p=>p.down=5);
  d.x=c.x;d.y=c.y-20;m.step(1/120);assert.equal(m.phase,'live');assert.ok(d.tackleWind>0);
- m.special({x:1,y:0});tick(m,26,{x:1,y:0});assert.equal(m.phase,'live');assert.equal(m.tackles,0);assert.ok(d.cd>0);
+ m.special({x:1,y:0});tick(m,38,{x:1,y:0});assert.equal(m.phase,'live');assert.equal(m.tackles,0);assert.ok(d.cd>0);
 });
 test('kick reception grants time for a decision and holding defense cannot survive possession change',()=>{
  const m=setup();m.kick();m.recoverKick(m.players[7]);assert.ok(m.guard>=.7);

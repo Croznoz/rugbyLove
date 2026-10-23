@@ -1,3 +1,4 @@
+import {STORAGE_KEY,schedule,createTournament,nextOpponent,finishRound,standings,roundOf,restoreTournament} from './tournament.mjs';
 import {NATIONS,teamPair,matchKits} from './teams.mjs';
 import {Match,clamp} from './engine.mjs';
 import {Renderer} from './render.mjs';
@@ -5,7 +6,46 @@ const $=id=>document.getElementById(id);
 const match=new Match(),renderer=new Renderer($('pitch'),$('minimap'));
 const input={x:0,y:0,sprint:false},keys=new Set();
 let kickPointer=null,joyPointer=null,stickX=0,stickY=0,buttonPointer=null,paused=false,last=0,accumulator=0,hudAt=0,noticeUntil=0,sound=false,audio=null,frameId=0;
-let contestHud=0;
+let contestHud=0,tournament=null,tournamentActive=false,playingRound=-1;
+try{tournament=restoreTournament(globalThis.localStorage?.getItem(STORAGE_KEY));}catch{}
+function saveTournament(){
+  try{if(!globalThis.localStorage)throw new Error('storage');globalThis.localStorage.setItem(STORAGE_KEY,JSON.stringify(tournament));$('saveStatus').hidden=true;}
+  catch{$('saveStatus').hidden=false;$('saveStatus').textContent='Salvataggio non disponibile: continua in questa scheda.';}
+}
+function tournamentMenu(){
+  const enabled=$('gameMode').value==='tournament';
+  $('start').textContent=enabled?'NUOVO SIX NATIONS ↗':'SCENDI IN CAMPO ↗';
+  $('tournamentInfo').hidden=!enabled;$('awayNation').disabled=enabled;
+  if(enabled)$('awayNation').value=nextOpponent(createTournament($('homeNation').value||'ita'));
+  $('resumeTournament').hidden=!tournament||roundOf(tournament)>=5;
+  if(tournament&&roundOf(tournament)<5)$('resumeTournament').textContent='RIPRENDI '+NATIONS.find(n=>n.id===tournament.team).name+' · GIORNATA '+(roundOf(tournament)+1)+'/5';
+}
+function tournamentResult(){
+  $('result').classList[tournamentActive?'add':'remove']('tournament-results');
+  $('tournamentResult').hidden=!tournamentActive;
+  if(!tournamentActive){$('replay').textContent='GIOCA ANCORA ↗';return;}
+  if(finishRound(tournament,match.score,match.stats.tries,playingRound))saveTournament();
+  const rows=standings(tournament),round=roundOf(tournament),finished=round===5;
+  rows.forEach((row,i)=>{
+    $('standingRank'+i).textContent=row.rank;$('standingName'+i).textContent=NATIONS.find(n=>n.id===row.id).short;
+    $('standingPlayed'+i).textContent=row.played;$('standingPoints'+i).textContent=row.points;$('standingDiff'+i).textContent=(row.diff>0?'+':'')+row.diff;
+    $('standingRow'+i).classList[row.id===tournament.team?'add':'remove']('your-nation');
+  });
+  $('roundTitle').textContent='GIORNATA '+round+' / 5';
+  $('roundResults').textContent='RISULTATI · ALTRE PARTITE SIMULATE\n'+tournament.results.slice(-3).map(g=>g.teams.map((id,i)=>NATIONS.find(n=>n.id===id).short+' '+g.score[i]).join(' — ')).join('\n');
+  $('tournamentCalendar').textContent=schedule().map((fixtures,r)=>{
+    const fixture=fixtures.find(f=>f.includes(tournament.team)),game=tournament.results.find(g=>g.round===r&&g.teams.includes(tournament.team));
+    return (r+1)+'. '+fixture.map((id,i)=>NATIONS.find(n=>n.id===id).short+(game?' '+game.score[i]:'')).join(' — ');
+  }).join('\n');
+  $('winnerCup').hidden=!finished;
+  if(finished){
+    const winners=rows.filter(r=>r.rank===1).map(r=>NATIONS.find(n=>n.id===r.id).name).join(' / ');
+    $('roundTitle').textContent='COPPA · '+winners;
+    $('nextFixture').textContent='IL TUO PIAZZAMENTO: '+rows.find(r=>r.id===tournament.team).rank+'° · Pari punti: differenza punti, poi mete.';
+  }else $('nextFixture').textContent='PROSSIMA: '+NATIONS.find(n=>n.id===nextOpponent(tournament)).name;
+  $('replay').textContent=finished?'NUOVO SIX NATIONS ↗':'PROSSIMA PARTITA ↗';
+}
+
 const STEP=1/120,roles=['MEDIANO','APERTURA','CENTRO','CENTRO','ALA','ALA','ESTREMO'];
 function audioReady(){if(!sound)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume().catch(()=>{});}catch{}}
 function beep(freq=440,duration=.08,type='sine',volume=.04,delay=0){if(!sound||!audio)return;const o=audio.createOscillator(),g=audio.createGain(),at=audio.currentTime+delay;o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(volume,at+.006);g.gain.exponentialRampToValueAtTime(.001,at+duration);o.connect(g);g.connect(audio.destination);o.start(at);o.stop(at+duration+.01);}
@@ -120,6 +160,7 @@ function teamLabels(teams,kits){
   $('scrumBalance').style.background=kits[0].body;
 }
 function previewTeams(changed){
+  tournamentMenu();
   const teams=selectedTeams(changed);
   $('homeTraits').textContent=teams[0].detail;$('awayTraits').textContent=teams[1].detail;
   for(const [i,side] of ['home','away'].entries()){
@@ -141,9 +182,19 @@ function previewTeams(changed){
 $('homeNation').addEventListener('change',()=>previewTeams('home'));
 $('awayNation').addEventListener('change',()=>previewTeams('away'));
 
-function start(){
+function start(continuing=false){
   const teams=selectedTeams();
-  releaseControls();audioReady();match.reset({seconds:Number($('duration').value),difficulty:$('difficulty').value,scrums:$('scrums').value==='on',home:teams[0].id,away:teams[1].id});paused=false;
+  const settings={seconds:Number($('duration').value),difficulty:$('difficulty').value,scrums:$('scrums').value==='on'};
+  if(!continuing){
+    tournamentActive=$('gameMode').value==='tournament';
+    if(tournamentActive){tournament=createTournament(teams[0].id,settings);saveTournament();}
+  }
+  if(tournamentActive){
+    if(!nextOpponent(tournament))tournament=createTournament(tournament.team,tournament.settings);
+    playingRound=roundOf(tournament);saveTournament();
+  }else playingRound=-1;
+  const options=tournamentActive?{...tournament.settings,home:tournament.team,away:nextOpponent(tournament)}:{...settings,home:teams[0].id,away:teams[1].id};
+  releaseControls();audioReady();match.reset(options);paused=false;
   $('menu').hidden=true;$('pauseMenu').hidden=true;$('result').hidden=true;$('helpContent').hidden=true;$('help').setAttribute('aria-expanded','false');$('pause').disabled=false;
   teamLabels(match.teams,match.kits);renderer.camera.y=440;accumulator=0;consumeEvents();updateHud();
   document.body.classList.add('playing');renderer.resize();
@@ -153,11 +204,12 @@ function pause(){
   if(match.state!=='playing'||paused)return;paused=true;releaseControls();updateCrowd();$('pauseMenu').hidden=false;$('resume').focus();$('pause').setAttribute('aria-label','Partita in pausa');
 }
 function resume(){paused=false;last=performance.now();accumulator=0;$('pauseMenu').hidden=true;$('pause').setAttribute('aria-label','Metti in pausa');}
-function menu(){document.body.classList.remove('playing');renderer.resize();paused=false;releaseControls();match.reset({});match.state='menu';match.phase='live';match.events=[];$('menu').hidden=false;$('pauseMenu').hidden=true;$('result').hidden=true;$('pause').disabled=true;$('notice').classList.remove('show');renderer.camera.y=440;updateHud();previewTeams();$('start').focus();}
+function menu(){tournamentActive=false;document.body.classList.remove('playing');renderer.resize();paused=false;releaseControls();match.reset({});match.state='menu';match.phase='live';match.events=[];$('menu').hidden=false;$('pauseMenu').hidden=true;$('result').hidden=true;$('pause').disabled=true;$('notice').classList.remove('show');renderer.camera.y=440;updateHud();previewTeams();$('start').focus();}
 function showResult(){
   releaseControls();$('resultTitle').textContent=match.score[0]>match.score[1]?'VITTORIA '+match.teams[0].name+'!':match.score[0]<match.score[1]?'LA RIVINCITA?':'ALLA PARI.';
   $('resultTeams').textContent=match.teams.map(t=>t.name).join(' · ');
   $('finalScore').textContent=match.score[0]+' — '+match.score[1];$('statTries').textContent=match.stats.tries[0];$('statPasses').textContent=match.stats.passes[0];$('statTackles').textContent=match.stats.tackles[0];
+  tournamentResult();
   $('result').hidden=false;$('pause').disabled=true;$('replay').focus();beep(1250,.3,'sine',.025);
 }
 function actionA(){if(paused)return;audioReady();match.pass(directionInput());updateHud();}
@@ -169,7 +221,9 @@ function actionC(){if(paused)return;if(match.phase==='conversion'){stopConversio
 const conversionButton=$('conversionStop');
 conversionButton.addEventListener('pointerdown',e=>{e.preventDefault();if(!conversionButton.disabled)stopConversion();});
 conversionButton.addEventListener('click',e=>{if(e.detail===0&&!conversionButton.disabled)stopConversion();});
-$('start').addEventListener('click',start);$('replay').addEventListener('click',start);$('resultMenu').addEventListener('click',menu);$('quit').addEventListener('click',menu);$('pause').addEventListener('click',pause);$('resume').addEventListener('click',resume);
+$('gameMode').addEventListener('change',()=>previewTeams());
+$('resumeTournament').addEventListener('click',()=>{if(tournament&&nextOpponent(tournament)){tournamentActive=true;start(true);}});
+$('start').addEventListener('click',()=>start());$('replay').addEventListener('click',()=>start(tournamentActive));$('resultMenu').addEventListener('click',menu);$('quit').addEventListener('click',menu);$('pause').addEventListener('click',pause);$('resume').addEventListener('click',resume);
 $('help').addEventListener('click',()=>{$('helpContent').hidden=!$('helpContent').hidden;$('help').setAttribute('aria-expanded',String(!$('helpContent').hidden));});
 $('closeHelp').addEventListener('click',()=>{$('helpContent').hidden=true;$('help').setAttribute('aria-expanded','false');$('help').focus();});
 $('sound').addEventListener('click',()=>{sound=!sound;audioReady();$('soundLabel').textContent=sound?'ON':'OFF';$('sound').setAttribute('aria-pressed',String(sound));$('sound').setAttribute('aria-label',sound?'Disattiva audio':'Attiva audio');if(sound)beep(600);updateCrowd();});

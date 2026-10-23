@@ -23,7 +23,7 @@ export class Match{
   constructor(){this.events=[];this.reset({});this.state='menu';this.phase='live';}
   reset({seconds=60,difficulty='normal',scrums=false,home='ita',away='irl'}={}){
     this.teams=teamPair(home,away);this.kits=matchKits(this.teams);
-    this.scrumsEnabled=!!scrums;this.scrum=null;this.seconds=seconds;this.difficulty=difficulty;this.aiSpeed={easy:70,normal:80,hard:88}[difficulty]||80;
+    this.scrumsEnabled=!!scrums;this.scrum=null;this.seconds=seconds;this.difficulty=difficulty;this.aiSpeed=78;
     this.score=[0,0];this.half=1;this.time=seconds;this.elapsed=0;this.attackDir=-1;this.possession=0;this.tackles=0;this.state='playing';this.phase='kickoff';this.phaseTime=2.1;this.events=[];this.ball=null;this.particles=[];this.perfectImpact=null;this.cpuThink=0;this.passCooldown=0;this.guard=1;this.selected=0;
     this.passSelection=null;this.kickAim=null;this.loopRun=null;this.attackPlan=null;this.defensePlan=null;this.conversion=null;this.contact=null;this.cpuOffloadAt=-10;this.defenseGesture=null;this.aim={x:0,y:0};
     this.stats={tries:[0,0],conversions:[0,0],conversionAttempts:[0,0],passes:[0,0],offloads:[0,0],scrums:[0,0],tackles:[0,0],breaks:[0,0],kicks:[0,0],possession:[0,0]};
@@ -63,7 +63,7 @@ export class Match{
       const own=p.team===team,offset=(own?KICKING_FORMATION:RECEIVING_FORMATION)[p.slot];
       p.x=clamp(x+offset[0]*(FIELD.width/600),FIELD.left+8,FIELD.right-8);
       p.y=clamp(y+d*offset[1]*(FIELD.height/1100),FIELD.top+24,FIELD.bottom-24);
-      p.px=p.x;p.py=p.y;p.vx=p.vy=0;p.moveSpeed=0;p.down=0;p.jump=0;p.jumpQuality=0;p.supportUntil=0;p.burst=0;p.charge=0;p.dive=0;p.kickAnim=0;p.dominantAttempt=false;p.brace=false;p.evade=0;p.tackleWind=0;p.facing=this.dir(p.team);
+      p.px=p.x;p.py=p.y;p.vx=p.vy=0;p.moveSpeed=0;p.down=0;p.jump=0;p.jumpQuality=0;p.supportUntil=0;p.receiveUntil=0;p.burst=0;p.charge=0;p.dive=0;p.kickAnim=0;p.dominantAttempt=false;p.brace=false;p.evade=0;p.tackleWind=0;p.facing=this.dir(p.team);
     }
     this.selected=team===0?this.carrierId:this.nearest(0,this.carrier).id;
   }
@@ -131,7 +131,7 @@ export class Match{
     const breakthrough=beaten>=3&&ahead<=1;
     // Close support follows a break for the offload; outside runners keep their width.
     const spread=lanes[rank]*(close&&breakthrough?.7:1);
-    const depth=(close?(breakthrough?20:24):wide?48:34)*sy;
+    const depth=(close?(breakthrough?14:18):wide?36:28)*sy;
     // Each support lane has a distinct attacking intention: the close runner
     // bends into the nearest gap, the channel runner offers a return angle,
     // while the wide runner holds width for a genuine two-on-one.
@@ -190,7 +190,7 @@ export class Match{
     for(const p of eligible)if(p.commitUntil>this.elapsed&&!(p.team===0&&p.id===this.selected)){
       points.set(p.id,{x:p.commitX,y:p.commitY,role:'committed'});
     }
-    return this.defensePlan={carrier:c.id,anchorId,until:this.elapsed+.16,pressure:pressure?.id,points};
+    return this.defensePlan={carrier:c.id,anchorId,until:this.elapsed+(c.team===0?({easy:.32,normal:.24,hard:.18}[this.difficulty]||.24):.16),pressure:pressure?.id,points};
   }
   passValue(p,c){const threat=Math.min(150,...this.players.filter(a=>a.team!==p.team&&a.down<=0).map(a=>distance(a,p)));return threat*.7+Math.min(60,this.laneClearance(c,p))*.8-distance(p,c)*.15-Math.abs(p.y-c.y)*.23;}
   pass(aim=this.aim){
@@ -230,7 +230,7 @@ export class Match{
       p.commitY=clamp(passer.y+passer.vy*.18,FIELD.top-16,FIELD.bottom+16);
     }
     this.defensePlan=null;
-    const c=this.carrier;c.charge=0;this.ball={kind:'pass',oneTwo,x:c.x,y:c.y,sx:c.x,sy:c.y,tx:to.x,ty:to.y,to:to.id,from:c.id,t:0,duration:clamp(distance(c,to)/(430*c.nation.pass),.2,.52),team:c.team};for(const p of this.players)p.tackleWind=0;this.ball.runX=to.vx;this.ball.runY=Math.abs(to.vy)>8?to.vy:this.dir(c.team)*65;this.passCooldown=.18;this.emit('pass');return true;
+    const c=this.carrier;c.charge=0;this.ball={kind:'pass',oneTwo,x:c.x,y:c.y,sx:c.x,sy:c.y,tx:to.x,ty:to.y,to:to.id,from:c.id,t:0,duration:clamp(distance(c,to)/(430*c.nation.pass),.2,.52),team:c.team};for(const p of this.players)if(p.team!==c.team&&distance(p,c)<64)p.tackleWind=0;this.ball.runX=clamp(to.vx,-45,45);this.ball.runY=this.dir(c.team)*Math.max(50,to.vy*this.dir(c.team));this.passCooldown=.18;this.emit('pass');return true;
   }
   canChase(p,b=this.ball){
     return b.kind==='fumble'||p.team!==b.team||b.eligible.includes(p.id)||(p.y-this.players[b.from].y)*this.dir(b.team)<=0;
@@ -466,6 +466,18 @@ export class Match{
     if(this.tackles>=3&&this.scrumsEnabled){this.beginScrum(1-c.team);return;}
     if(this.tackles>=3){this.restart.team=1-c.team;this.tackles=0;this.emit('turnover','CAMBIO POSSESSO','PALLA · '+this.teams[this.restart.team].name);}
     this.phase='ruck';this.phaseTime=.42;this.restart.receiver=this.nearest(this.restart.team,this.restart,c.id).id;
+  }
+  chargeReady(){
+    const c=this.carrier;
+    if(this.state!=='playing'||this.phase!=='live'||this.possession!==0||this.ball||this.kickAim||c.down>0||c.cd>0||c.energy<36)return false;
+    const speed=Math.hypot(c.vx,c.vy),fx=speed>8?c.vx/speed:0,fy=speed>8?c.vy/speed:this.dir(0);
+    return this.players.some(d=>d.team===1&&d.down<=0&&!d.brace&&distance(d,c)>=28&&distance(d,c)<=52&&((d.x-c.x)*fx+(d.y-c.y)*fy)/distance(d,c)>.8);
+  }
+  previewChaser(){
+    if(!this.kickAim)return null;
+    const c=this.carrier,{tx,ty}=this.kickTarget(this.kickAim,this.kickAim.power);
+    return this.players.filter(p=>p.team===c.team&&p.down<=0&&(p.y-c.y)*this.dir(c.team)<=0)
+      .sort((a,b)=>Math.hypot(a.x-tx,a.y-ty)-Math.hypot(b.x-tx,b.y-ty))[0]||null;
   }
   perfectTackleReady(){
     const p=this.controlled,c=this.carrier;
@@ -718,7 +730,7 @@ export class Match{
       }else if(p.evade>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;speed=150*p.profile.agility*p.nation.agility;
       }else if(this.ball?.kind==='pass'&&p.id===this.ball.to){
         dx=this.ball.runX;dy=this.ball.runY;const run=Math.hypot(dx,dy)||1;dx/=run;dy/=run;speed=78;
-      }else if(p.id===this.selected&&!(this.ball?.kickoff&&!this.ball.landed&&Math.hypot(input.x||0,input.y||0)<.1&&chasers[p.team].indexOf(p)>=0&&chasers[p.team].indexOf(p)<2)){dx=input.x||0;dy=input.y||0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*28.8*(1+.25*clamp(p.runLoad/8,0,1)));}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
+      }else if(p.id===this.selected&&!(this.ball?.kickoff&&!this.ball.landed&&Math.hypot(input.x||0,input.y||0)<.1&&chasers[p.team].indexOf(p)>=0&&chasers[p.team].indexOf(p)<2)){dx=input.x||0;dy=input.y||0;if(Math.hypot(dx,dy)<.1&&p.receiveUntil>this.elapsed){const run=Math.hypot(p.vx,p.vy)||1;dx=p.vx/run;dy=p.vy/run;}else if(Math.hypot(dx,dy)>=.1)p.receiveUntil=0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*28.8*(1+.25*clamp(p.runLoad/8,0,1)));}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
       }else if(p.id===this.carrierId&&!this.ball){
         const dir=this.dir(p.team);let repel=0;
         for(const d of defenders){if(d.down>0)continue;const ahead=(d.y-p.y)*dir;if(ahead>-15&&ahead<110)repel+=(p.x>=d.x?1:-1)*Math.max(0,75-Math.abs(p.x-d.x))*.025;}
@@ -749,7 +761,7 @@ export class Match{
       const chasing=!this.ball&&p.team!==this.possession&&gapY*chaseDir>8&&
         (dx*gapX+dy*gapY)>Math.hypot(gapX,gapY)*.5;
       if(chasing&&p.dive<=0&&!p.brace){
-        speed=Math.max(speed,this.aiSpeed+(p.id===this.selected?10:4));
+        speed=Math.max(speed,p.team===0?90:this.aiSpeed+6*clamp((120-Math.hypot(gapX,gapY))/90,0,1));
       }
       if(p.jump>0)speed*=.65;
       if(p.brace){speed*=.6;this.spendEnergy(p,dt*5);}
@@ -779,7 +791,7 @@ export class Match{
       const b=this.ball;b.t+=dt;const receiver=this.players[b.to];b.tx=receiver.x;b.ty=receiver.y;const ratio=clamp(b.t/b.duration,0,1);b.x=b.sx+(b.tx-b.sx)*ratio;b.y=b.sy+(b.ty-b.sy)*ratio;
       const intercept=this.players.find(p=>p.team!==b.team&&p.down<=0&&distance(p,b)<10&&ratio>.2&&ratio<.95);
       if(intercept){this.carrierId=intercept.id;this.possession=intercept.team;this.tackles=0;this.ball=null;this.guard=.6;this.selected=this.possession===0?intercept.id:this.nearest(0,intercept).id;this.emit('turnover','INTERCETTO!','PALLA · '+this.teams[this.possession].name);}
-      else if(ratio>=1){const p=this.players[b.to];this.carrierId=b.to;this.possession=p.team;this.stats.passes[p.team]++;if(b.offload)this.stats.offloads[p.team]++;this.ball=null;this.guard=.6;if(p.team===0)this.selected=p.id;if(b.oneTwo&&p.team===0)this.emit('oneTwo','UNO-DUE!','PALLA VIVA · ATTACCA IL VARCO');}
+      else if(ratio>=1){const p=this.players[b.to];this.carrierId=b.to;this.possession=p.team;this.stats.passes[p.team]++;if(b.offload)this.stats.offloads[p.team]++;this.ball=null;this.guard=.6;p.receiveUntil=this.elapsed+.3;if(p.team===0)this.selected=p.id;if(b.oneTwo&&p.team===0)this.emit('oneTwo','UNO-DUE!','PALLA VIVA · ATTACCA IL VARCO');}
     }else{
       const c=this.carrier,dir=this.dir(c.team);
       if((dir<0&&c.y<=FIELD.top)||(dir>0&&c.y>=FIELD.bottom)){this.tryScored(c.team);return;}
@@ -798,13 +810,13 @@ export class Match{
               defender.cd=.5;this.emit('miss');
             }
           }else if(defender.dive<=0&&defender.cd<=0&&gap<29){
-            defender.tackleWind=.18/(defender.profile.tackle*defender.nation.tackle);defender.tackleX=(c.x-defender.x)/Math.max(1,gap);
+            defender.tackleWind=(defender.team===1?({easy:.30,normal:.24,hard:.20}[this.difficulty]||.24):.18)/(defender.profile.tackle*defender.nation.tackle);defender.tackleX=(c.x-defender.x)/Math.max(1,gap);
             defender.tackleY=(c.y-defender.y)/Math.max(1,gap);
           }
         }
       }
       if(this.possession===1&&this.cpuThink<=0){
-        this.cpuThink=.65;
+        this.cpuThink={easy:1,normal:.8,hard:.5}[this.difficulty]||.8;
         const near=defenders[0],dir=this.dir(1);
         const options=this.players.filter(p=>p.team===1&&p.id!==c.id&&p.down<=0&&(p.y-c.y)*dir<=0&&distance(p,c)<130);
         const target=options.sort((a,b)=>this.passValue(b,c)-this.passValue(a,c))[0];

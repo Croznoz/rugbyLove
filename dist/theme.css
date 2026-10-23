@@ -93,3 +93,29 @@ html,body{background:#eeeadd;background-image:none}
 .nation-stat{grid-template-columns:58px minmax(12px,1fr) 28px}
 .nation-stat b{font-size:7px}
 @media(max-width:700px){.nation-stat{grid-template-columns:54px minmax(8px,1fr) 27px}}
+
+/* Tournament panels share the existing compact retro palette. */
+.dialog{max-height:100%;overflow-y:auto;overscroll-behavior:contain}
+.standings{width:100%;border-collapse:collapse;margin:12px 0;font-size:9px;text-align:right}
+.standings caption{font-size:9px;margin-bottom:8px;color:#e8bc86}
+.standings th,.standings td{padding:6px 4px;border-bottom:1px solid #cbd4bd44}
+.standings th:nth-child(2){text-align:left}
+.standings .your-nation{color:#ffe29b;background:#cbd4bd12}
+#roundTitle{font-size:12px;line-height:1.6}
+#roundResults{white-space:pre-line;font-size:10px}
+#tournamentInfo,#saveStatus{font-size:11px;line-height:1.5}
+#resumeTournament{width:100%;padding:10px 0;color:#ffe29b}
+#nextFixture{font-size:11px}
+
+#tournamentCalendar{white-space:pre-line;font-size:11px}#tournamentResult summary{font-size:9px;cursor:pointer;padding:10px 0}
+
+.tournament-results .dialog{padding:14px 18px}
+.tournament-results h2{font-size:18px;margin:8px 0}
+.tournament-results #resultTeams{margin:4px 0;font-size:11px}
+.tournament-results .final-score{font-size:25px;margin:8px 0}
+.tournament-results .result-stats{margin:8px 0}
+.tournament-results .result-stats b{font-size:14px}
+.tournament-results .standings th,.tournament-results .standings td{padding:4px}
+.tournament-results #roundTitle{margin:10px 0}
+.tournament-results #roundResults{margin:8px 0;line-height:1.4}
+#tournamentInfo,#saveStatus{display:block}
