@@ -1,3 +1,4 @@
+import {drawBall} from './ball-art.mjs';
 import {FIELD,clamp} from './engine.mjs';
 import {drawConversion} from './conversion-render.mjs';
 import {ART,KITS,polygon} from './art.mjs';
@@ -81,7 +82,7 @@ export class Renderer{
     else if(p.down>0)c.rotate(Math.PI/2);
     else if(p.charge>0)c.rotate(p.chargeX*.2);
     const rect=(x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(x,y,w,h);};
-    const kit=KITS[p.team],outline=ART.deep,powerful=p.profile.label==='POTENTE';
+    const kit=p.kit||KITS[p.team],outline=ART.deep,powerful=p.profile.label==='POTENTE';
     const skins=[['#eaa16b','#aa5538','#ffd092'],['#bc7850','#743c32','#e9a46e'],['#efb77d','#b96c43','#ffdaa0']], [skin,skinShade,skinLight]=skins[p.slot%3];
     const run=Math.min(1,Math.hypot(p.vx,p.vy)/40),s=p.kickAnim>0?-5:Math.round(Math.sin(p.anim)*3*run);
     // Simple faceted volumes, with one sunlit face and one shaded face.
@@ -106,7 +107,7 @@ export class Renderer{
     polygon(c,[[-4,-42],[3,-43],[5,-40],[2,-39],[-5,-40]],hair);
     if(p.facing<0)rect(-4,-40,7,4,hair);
     if(powerful){rect(-5,-41,9,3,kit.shade);rect(-5,-40,2,5,kit.body);rect(3,-40,2,5,kit.shade);}
-    if(carrier){c.save();c.translate(12,-19);c.rotate(-.5);c.fillStyle='#fff0d0';c.beginPath();c.ellipse(0,0,7,4,0,0,Math.PI*2);c.fill();rect(-2,-3,2,6,'#b7a582');c.restore();}
+    if(carrier)drawBall(c,12,-19,7,-.5);
     // Number is the last layer, so arms and the ball never cover it.
     drawShirtNumber(c,p.number,-27,kit);c.restore();
   }
@@ -124,13 +125,13 @@ export class Renderer{
   drawOverhead(c,p,x,y){
     c.save();c.translate(x,y);c.scale(.8*this.playerScale*p.profile.width,.8*this.playerScale*p.profile.height);c.rotate(p.facing<0?0:Math.PI);
     c.fillStyle='#173d2b70';c.beginPath();c.ellipse(2,3,13,10,0,0,Math.PI*2);c.fill();
-    c.fillStyle=KITS[p.team].light;c.fillRect(-11,-6,22,12);
-    c.fillStyle=KITS[p.team].body;c.fillRect(-7,-7,14,15);
-    c.fillStyle=KITS[p.team].shade;c.fillRect(4,-5,3,12);c.fillStyle='#eee9d2';c.fillRect(-10,-3,3,3);c.fillRect(7,-3,3,3);c.fillRect(-3,-7,6,2);
+    c.fillStyle=(p.kit||KITS[p.team]).light;c.fillRect(-11,-6,22,12);
+    c.fillStyle=(p.kit||KITS[p.team]).body;c.fillRect(-7,-7,14,15);
+    c.fillStyle=(p.kit||KITS[p.team]).shade;c.fillRect(4,-5,3,12);c.fillStyle='#eee9d2';c.fillRect(-10,-3,3,3);c.fillRect(7,-3,3,3);c.fillRect(-3,-7,6,2);
     c.fillStyle=['#d5a77c','#b67c54','#ecc29a'][p.slot%3];c.fillRect(-4,-12,8,7);c.fillStyle='#564432';c.fillRect(-4,-12,8,3);
     c.fillStyle='#203e40';c.fillRect(-6,8,4,5);c.fillRect(2,8,4,5);
     // Keep the number upright for either scrum direction.
-    c.save();c.rotate(p.facing<0?0:Math.PI);drawShirtNumber(c,p.number,-2,KITS[p.team]);c.restore();c.restore();
+    c.save();c.rotate(p.facing<0?0:Math.PI);drawShirtNumber(c,p.number,-2,p.kit||KITS[p.team]);c.restore();c.restore();
   }
   draw(match,dt=1/60,alpha=1){
     if(match.phase==='conversion'&&match.conversion){drawConversion(this,match);return;}
@@ -161,7 +162,7 @@ export class Renderer{
       }
       c.restore();
     }
-    c.textAlign='center';c.font='bold 18px monospace';c.fillStyle='#d4e0b67a';c.fillText(match.attackDir<0?'IRLANDA':'ITALIA',FIELD.width/2,FIELD.top-23);c.fillText(match.attackDir<0?'ITALIA':'IRLANDA',FIELD.width/2,FIELD.bottom+37);
+    c.textAlign='center';c.font='bold 18px monospace';c.fillStyle='#d4e0b67a';c.fillText(match.teams[match.attackDir<0?1:0].name,FIELD.width/2,FIELD.top-23);c.fillText(match.teams[match.attackDir<0?0:1].name,FIELD.width/2,FIELD.bottom+37);
     if(match.scrum&&match.scrum.feed===0){
       const s=match.scrum,receiver=match.players[s.side<0?3:4];
       c.strokeStyle='#e4f398';c.lineWidth=2;c.setLineDash([4,4]);
@@ -254,7 +255,7 @@ export class Renderer{
     }
     if(match.ball){const b=match.ball,t=clamp(b.t/b.duration,0,1),height=b.kind==='kick'?(b.z||0):b.grubber?Math.abs(Math.sin(t*Math.PI*3))*4:Math.sin(t*Math.PI)*(b.kind==='fumble'?12:match.loose?72:22),ground=match.loose&&t>=1;
       c.fillStyle='#1c342751';c.beginPath();c.ellipse(b.x,b.y+3,5+height*.02,2+height*.008,0,0,Math.PI*2);c.fill();
-      c.save();c.translate(b.x,b.y-(b.kind==='kick'?2:ground?Math.abs(Math.sin(b.groundTime*11))*Math.max(0,5-b.groundTime*6):b.grubber?2:12)-height);c.rotate(b.kind==='kick'?(b.rotation||0):t*9);c.fillStyle='#604d31';c.fillRect(-6,-3,12,6);c.fillStyle='#f3ecd2';c.fillRect(-5,-2,10,4);c.fillStyle='#a68b63';c.fillRect(-1,-2,1,4);c.restore();}
+      drawBall(c,b.x,b.y-(b.kind==='kick'?2:ground?Math.abs(Math.sin(b.groundTime*11))*Math.max(0,5-b.groundTime*6):b.grubber?2:12)-height,7,b.kind==='kick'?(b.rotation||0):t*9);}
     for(const p of match.particles){c.globalAlpha=clamp(p.life*2,0,1);c.fillStyle=p.color;c.fillRect(p.x,p.y,2,2);}c.globalAlpha=1;
     if(match.perfectImpact){
       const impact=match.perfectImpact,t=1-impact.remaining/.5,r=20+t*48;
@@ -289,7 +290,7 @@ export class Renderer{
   }
   drawMap(match){
     const c=this.mc;c.fillStyle='#142537eb';c.fillRect(0,0,108,172);c.strokeStyle='#d2c79b55';c.lineWidth=1;c.strokeRect(7,8,94,156);c.beginPath();c.moveTo(7,86);c.lineTo(101,86);c.stroke();
-    for(const p of match.players){c.fillStyle=p.team===0?'#6e92b3':'#f0e4b8';c.fillRect(p.x/FIELD.width*94+5,p.y/FIELD.height*156+6,4,4);}
+    for(const p of match.players){c.fillStyle=p.kit.light;c.fillRect(p.x/FIELD.width*94+5,p.y/FIELD.height*156+6,4,4);}
     const ball=match.ball||match.carrier;c.fillStyle='#f1c975';c.beginPath();c.arc(ball.x/FIELD.width*94+7,ball.y/FIELD.height*156+8,3,0,Math.PI*2);c.fill();
     c.strokeStyle='#e8efad66';const view=this.height/this.zoom;c.strokeRect(7,clamp((this.camera.y-view/2)/FIELD.height*156+8,8,164),94,Math.min(view/FIELD.height*156,156));
   }

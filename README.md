@@ -136,10 +136,54 @@ cache o dipendenze installate, né la cronologia Git.
 Su smartphone con puntatore touch i giocatori sono ingranditi del 10%; desktop invariato.
 Il calcio d’inizio della tua squadra, anche dopo una meta subita, attende CALCIA/L: tieni, orienta e rilascia per scegliere direzione e potenza. La battuta avversaria resta automatica.
 
-La mischia offensiva attende SPINGI (B, K o spazio): la prima pressione avvia il richiamo di 3 secondi, seguito dal duello di 4 secondi. Durante l’attesa tempo e bilanciamento restano fermi; la difesa resta automatica.
+La mischia offensiva attende DUELLA (pulsante touch oppure B, K o spazio): la prima pressione avvia il richiamo di 0,4 secondi, seguito dal duello di 4 secondi. Durante l’attesa tempo e bilanciamento restano fermi; la difesa resta automatica.
 
 I giocatori possono recuperare il pallone in tutta l’area di meta. Se una palla libera supera la linea laterale o il fondo dell’area di meta, una rimessa automatica arcade assegna il possesso all’altra squadra dentro il campo; le linee esterne non fanno rimbalzare il pallone.
 
 I calci d’inizio e dopo meta sono sempre alti, anche con un tocco breve: la potenza regola la distanza senza passare al rasoterra. Il tempo di volo permette ai due inseguitori più vicini di ogni squadra di contendere la ricezione. Se il giocatore selezionato è tra loro, segue la zona di caduta finché il joystick è neutro; muovilo per riprendere subito il controllo.
 
 Quando una palla alta scende vicino al giocatore, B / K / spazio diventa CONTENDI: premi per saltare. L’anello verde indica il momento migliore; posizione e tempismo migliorano la presa senza garantirla. Costa 8 energia, con un breve recupero prima di riprovare. Anche gli avversari contendono. Nella finestra finale di 0,65 secondi di simulazione il gioco procede al 70%, solo se sei vicino e abilitato alla contesa; risale subito alla velocità normale dopo ricezione o atterraggio. Senza premere, il recupero rimane automatico.
+
+
+## Sei nazionali · partita singola
+
+Dal menu scegli Italia, Francia, Irlanda, Inghilterra, Scozia o Galles e la tua
+avversaria. La scelta resta disponibile per rivincita e ritorno al menu. Non si
+possono selezionare due nazionali identiche: cambiando una selezione, l'altra
+viene sostituita se necessario. Tabellone, mischie, conversioni, mete, risultato
+e scritte sul campo seguono le nazionali selezionate.
+
+Identità arcade, non classifiche o statistiche reali:
+
+| Nazionale | Vantaggio | Compromesso |
+| --- | --- | --- |
+| Italia | Recupero energia +6% | Finestra sfondamento −6% |
+| Francia | Finestra sfondamento +6% | Recupero energia −6% |
+| Irlanda | Velocità del passaggio +6% entro i limiti esistenti | Finestra sfondamento −6% |
+| Inghilterra | Distanza calci e forza in mischia +4% | Velocità della schivata −8% |
+| Scozia | Velocità della schivata +6% | Efficacia del placcaggio −6% |
+| Galles | Efficacia del placcaggio +6% | Distanza calci −6% |
+
+Il placcaggio modifica durata del tuffo e prontezza del contrasto automatico,
+non garantisce la riuscita. Restano i sette profili di ruolo, i costi delle
+azioni e i tempi reali della mira. Nessuna nazionale modifica corsa ordinaria,
+capacità della stamina, costo dei passaggi o velocità del caricamento. La CPU
+può sfondare o schivare dopo aver osservato l'avvicinamento di un difensore,
+con gli stessi costi e finestre del giocatore. La difficoltà preesistente resta
+separata dai bonus nazionali.
+
+Le divise usano la stessa grafica procedurale e palette smorzata. Negli scontri
+tra Italia, Francia e Scozia, l'avversaria veste avorio per evitare maglie
+confondibili. Nessuna immagine, libreria o connessione aggiuntiva richiesta.
+
+- `dist/teams.mjs`: identità, bonus, divise e gestione abbinamenti.
+- `npm run test:render`: include divise nazionali e tre inquadrature.
+- `npm run check:nations`: 30 abbinamenti a difficile, con giocatore scriptato,
+  seed fisso e tempi da 30 secondi; salva `qa/nations-check.json`. Verifica che
+  le partite finiscano e che le coordinate restino valide, non misura le
+  probabilità di vittoria di un giocatore umano. Nel controllo iniziale il bot
+  ha ottenuto 16 pareggi e 14 sconfitte: il bilanciamento competitivo richiede
+  ancora partite giocate, non è certificato dalle simulazioni.
+
+Questa prima fase comprende la partita singola; calendario e classifica del
+torneo non sono ancora implementati. Nessuna pubblicazione del sito originale.

@@ -1,3 +1,4 @@
+import {NATIONS,teamPair,matchKits} from './teams.mjs';
 import {Match,clamp} from './engine.mjs';
 import {Renderer} from './render.mjs';
 const $=id=>document.getElementById(id);
@@ -56,20 +57,20 @@ function updateHud(){
   $('half').textContent=match.half+'° TEMPO';
   if(match.phase==='conversion'){
     const c=match.conversion,ready=c.team===0&&['power','accuracy'].includes(c.stage)&&!paused;
-    $('possession').textContent=c.team===0?'◎ CONVERSIONE ITALIA':'◎ CONVERSIONE IRLANDA';$('phase').textContent='CRONOMETRO FERMO';
+    $('possession').textContent='◎ CONVERSIONE '+match.teams[c.team].name;$('phase').textContent='CRONOMETRO FERMO';
     $('actionA').disabled=true;$('actionB').disabled=true;$('actionC').disabled=!ready;
     $('labelA').textContent='—';$('labelB').textContent='—';$('labelC').textContent=ready?'FERMA':'TIRO';
     $('controlHint').textContent='C: POTENZA, POI PRECISIONE';$('actionC').setAttribute('aria-label',c.stage==='power'?'Ferma la potenza':'Ferma la precisione e calcia');return;
   }
   if(match.phase==='scrum'){
-    $('possession').textContent='MISCHIA ARCADE';$('phase').textContent='INTRODUCE '+(match.scrum.feed===0?'ITALIA':'IRLANDA');
+    $('possession').textContent='MISCHIA ARCADE';$('phase').textContent='INTRODUCE '+match.teams[match.scrum.feed].name;
     $('actionA').disabled=true;$('actionB').disabled=paused||match.scrum.feed===1;$('actionC').disabled=true;
-    $('labelA').textContent='—';$('labelB').textContent=match.scrum.feed===0?(match.scrum.started?'DUELLA':'SPINGI'):'AUTO';$('labelC').textContent='—';
+    $('labelA').textContent='—';$('labelB').textContent=match.scrum.feed===0?'DUELLA':'AUTO';$('labelC').textContent='—';
     $('actionB').classList.remove('cooling');$('actionB').setAttribute('aria-label',match.scrum.started?'Premi quando la lancetta è nel verde per duellare in mischia':'Premi per iniziare la mischia');
-    $('controlHint').textContent=match.scrum.feed===0?(match.scrum.started?'PREMI B NEL VERDE · JOYSTICK: USCITA':'PREMI SPINGI PER INIZIARE'):'MISCHIA DIFENSIVA AUTOMATICA';return;
+    $('controlHint').textContent=match.scrum.feed===0?(match.scrum.started?'PREMI B NEL VERDE · JOYSTICK: USCITA':'PREMI DUELLA PER INIZIARE'):'MISCHIA DIFENSIVA AUTOMATICA';return;
   }
   $('actionA').disabled=paused||(match.phase==='contact'&&match.possession!==0);$('actionB').disabled=match.phase==='contact';$('labelC').textContent=match.kickAim?'RILASCIA':'CALCIA';$('actionC').setAttribute('aria-label','Tieni premuto, mira col joystick e rilascia per calciare');
-  $('possession').textContent=match.loose?'◌ PALLA CONTESA':match.possession===0?'● PALLA AGLI AZZURRI':'● PALLA ALL’IRLANDA';
+  $('possession').textContent=match.loose?'◌ PALLA CONTESA':'● PALLA · '+match.teams[match.possession].name;
   $('phase').textContent=match.state==='menu'?'7 vs 7 · PARTITA RAPIDA':match.loose?(match.ball.kind==='fumble'?'PALLONE LIBERO':'INSEGUI IL CALCIO'):match.phase==='contact'?'PASSA ORA · OFFLOAD':match.phase==='ruck'?'RIPARTENZA':match.tackles+' / 3 PLACCAGGI';
   $('labelA').textContent=match.phase==='contact'&&match.possession===0?'OFFLOAD':match.possession===0&&!match.loose?'PASSA':'CAMBIA';$('labelB').textContent=match.loose?'SCATTO':match.possession===0?(Math.abs(directionInput().x)>.55&&Math.abs(directionInput().x)>Math.abs(directionInput().y)*1.25?'SCHIVA':'SFONDA'):match.controlled.brace?'CONTIENI':'PLACCA';
   $('direction').textContent='ATTACCA '+(match.attackDir<0?'↑':'↓');$('playerNumber').textContent=String(match.controlled.number).padStart(2,'0');$('playerName').textContent=roles[match.controlled.slot]+' · '+match.controlled.profile.label;
@@ -96,10 +97,41 @@ function updateHud(){
   $('actionB').classList[p.cd>0||tired?'add':'remove']('cooling');
   $('actionC').disabled=paused||match.state!=='playing'||!['live','kickoff'].includes(match.phase)||match.possession!==0||!!match.ball||(match.phase==='live'&&match.carrier.kickCd>0)||match.carrier.energy<12;
 }
+
+function selectedTeams(changed='home'){
+  let home=$('homeNation').value||'ita',away=$('awayNation').value||'irl';
+  if(home===away){
+    if(changed==='away')home=NATIONS.find(n=>n.id!==away).id;
+    else away=NATIONS.find(n=>n.id!==home).id;
+  }
+  const teams=teamPair(home,away);
+  $('homeNation').value=teams[0].id;$('awayNation').value=teams[1].id;
+  return teams;
+}
+function teamLabels(teams,kits){
+  for(const [i,side] of ['home','away'].entries()){
+    $(side+'Name').textContent=teams[i].name;
+    $(side+'Style').textContent=(i===0?'TU':'CPU')+' · '+teams[i].style;
+    $(side+'Chip').textContent=teams[i].short;
+    $(side+'Chip').style.background=kits[i].body;
+    $(side+'Chip').style.color=i===1&&kits[i]!==teams[i].kit?'#21383d':teams[i].id==='eng'?'#21383d':'#fff4cc';
+    $('scrum'+(i===0?'Home':'Away')).textContent=teams[i].name;
+  }
+  $('scrumBalance').style.background=kits[0].body;
+}
+function previewTeams(changed){
+  const teams=selectedTeams(changed);
+  $('homeTraits').textContent=teams[0].detail;$('awayTraits').textContent=teams[1].detail;
+  teamLabels(teams,matchKits(teams));
+}
+$('homeNation').addEventListener('change',()=>previewTeams('home'));
+$('awayNation').addEventListener('change',()=>previewTeams('away'));
+
 function start(){
-  releaseControls();audioReady();match.reset({seconds:Number($('duration').value),difficulty:$('difficulty').value,scrums:$('scrums').value==='on'});paused=false;
+  const teams=selectedTeams();
+  releaseControls();audioReady();match.reset({seconds:Number($('duration').value),difficulty:$('difficulty').value,scrums:$('scrums').value==='on',home:teams[0].id,away:teams[1].id});paused=false;
   $('menu').hidden=true;$('pauseMenu').hidden=true;$('result').hidden=true;$('helpContent').hidden=true;$('help').setAttribute('aria-expanded','false');$('pause').disabled=false;
-  renderer.camera.y=440;accumulator=0;consumeEvents();updateHud();
+  teamLabels(match.teams,match.kits);renderer.camera.y=440;accumulator=0;consumeEvents();updateHud();
   document.body.classList.add('playing');renderer.resize();
   $('pitchView').scrollIntoView({block:'nearest'});
 }
@@ -107,16 +139,17 @@ function pause(){
   if(match.state!=='playing'||paused)return;paused=true;releaseControls();updateCrowd();$('pauseMenu').hidden=false;$('resume').focus();$('pause').setAttribute('aria-label','Partita in pausa');
 }
 function resume(){paused=false;last=performance.now();accumulator=0;$('pauseMenu').hidden=true;$('pause').setAttribute('aria-label','Metti in pausa');}
-function menu(){document.body.classList.remove('playing');renderer.resize();paused=false;releaseControls();match.reset({});match.state='menu';match.phase='live';match.events=[];$('menu').hidden=false;$('pauseMenu').hidden=true;$('result').hidden=true;$('pause').disabled=true;$('notice').classList.remove('show');renderer.camera.y=440;updateHud();$('start').focus();}
+function menu(){document.body.classList.remove('playing');renderer.resize();paused=false;releaseControls();match.reset({});match.state='menu';match.phase='live';match.events=[];$('menu').hidden=false;$('pauseMenu').hidden=true;$('result').hidden=true;$('pause').disabled=true;$('notice').classList.remove('show');renderer.camera.y=440;updateHud();previewTeams();$('start').focus();}
 function showResult(){
-  releaseControls();$('resultTitle').textContent=match.score[0]>match.score[1]?'VITTORIA AZZURRA.':match.score[0]<match.score[1]?'LA RIVINCITA?':'ALLA PARI.';
+  releaseControls();$('resultTitle').textContent=match.score[0]>match.score[1]?'VITTORIA '+match.teams[0].name+'!':match.score[0]<match.score[1]?'LA RIVINCITA?':'ALLA PARI.';
+  $('resultTeams').textContent=match.teams.map(t=>t.name).join(' · ');
   $('finalScore').textContent=match.score[0]+' — '+match.score[1];$('statTries').textContent=match.stats.tries[0];$('statPasses').textContent=match.stats.passes[0];$('statTackles').textContent=match.stats.tackles[0];
   $('result').hidden=false;$('pause').disabled=true;$('replay').focus();beep(1250,.3,'sine',.025);
 }
 function actionA(){if(paused)return;audioReady();match.pass(directionInput());updateHud();}
 function directionInput(){return {x:stickX+(keys.has('ArrowRight')||keys.has('KeyD')?1:0)-(keys.has('ArrowLeft')||keys.has('KeyA')?1:0),y:stickY+(keys.has('ArrowDown')||keys.has('KeyS')?1:0)-(keys.has('ArrowUp')||keys.has('KeyW')?1:0)};}
-function actionB(){if(paused)return;audioReady();if(match.phase==='scrum'){match.scrumAction();updateHud();return;}match.special(directionInput());}
-function beginB(){if(paused)return;audioReady();if(match.phase==='scrum'){match.scrumAction();updateHud();return;}match.beginSpecial(directionInput());}
+function actionB(){if(paused)return;audioReady();if(match.phase==='scrum'){match.scrumAction();updateHud();updateScrum();return;}match.special(directionInput());}
+function beginB(){if(paused)return;audioReady();if(match.phase==='scrum'){match.scrumAction();updateHud();updateScrum();return;}match.beginSpecial(directionInput());}
 function stopConversion(){if(paused)return;audioReady();match.conversionAction();}
 function actionC(){if(paused)return;if(match.phase==='conversion'){stopConversion();return;}audioReady();if(match.kickAim)match.releaseKick();else match.beginKick(directionInput());}
 const conversionButton=$('conversionStop');
@@ -153,6 +186,7 @@ window.addEventListener('keydown',e=>{
   if(match.phase==='conversion'){
     if(['Space','KeyL','KeyC','Enter'].includes(e.code)){e.preventDefault();if(!e.repeat)stopConversion();}return;
   }
+  if(match.phase==='scrum'&&e.code==='KeyB'){e.preventDefault();if(!e.repeat)actionB();return;}
   if(!e.repeat){if(e.code==='KeyJ')actionA();if(e.code==='Space'||e.code==='KeyK'){if(match.phase==='scrum')actionB();else beginB();}if(e.code==='KeyL')match.beginKick(directionInput());}keys.add(e.code);
 });
 window.addEventListener('keyup',e=>{keys.delete(e.code);if((e.code==='Space'||e.code==='KeyK')&&!keys.has('Space')&&!keys.has('KeyK'))match.releaseSpecial(paused);if(e.code==='KeyL'&&!paused){match.updateKickAim(0,directionInput());match.releaseKick();}});
@@ -170,7 +204,7 @@ function updateConversion(){
   $('accuracyZone').style.left=((.5-c.greenHalf)*100)+'%';$('accuracyZone').style.width=(c.greenHalf*200)+'%';$('accuracyNeedle').style.left=(accuracy*100)+'%';
   $('powerRow').classList[c.stage==='power'?'remove':'add']('inactive');
   $('accuracyRow').classList[c.stage==='power'?'add':'remove']('inactive');
-  setText('conversionTitle','CONVERSIONE · '+(c.team===0?'ITALIA':'IRLANDA'));
+  setText('conversionTitle','CONVERSIONE · '+match.teams[c.team].name);
   setText('powerValue',Math.round(power*100)+'%'+(c.powerLocked!==null?' ✓':''));
   setText('accuracyValue',c.stage==='power'?'ATTENDI':c.stage==='accuracy'?(c.speed/.82).toFixed(1)+'×':c.accuracyLocked===null?'NON FERMATA':Math.abs(c.error)<=1?'NEL CENTRO':'FUORI CENTRO');
   const ready=c.team===0&&['power','accuracy'].includes(c.stage);conversionButton.disabled=!ready||paused||c.elapsed<.18;
@@ -186,14 +220,14 @@ function updateScrum(){
   const s=match.phase==='scrum'?match.scrum:null;$('scrumPanel').hidden=!s;$('pitchView').classList[s?'add':'remove']('scrum-view');if(!s)return;
   const waiting=s.feed===0&&!s.started;
   setText('scrumTitle',waiting?'MISCHIA · PRONTO?':'MISCHIA · '+Math.max(0,s.duration-s.elapsed).toFixed(1)+'s');
-  const ready=s.feed===0&&s.started&&s.elapsed>=3;
-  setText('scrumCallout',waiting?'MISCHIA · PREMI SPINGI':'MISCHIA · SPINGI!!');
+  const ready=s.feed===0&&s.started&&s.elapsed>=s.intro;
+  setText('scrumCallout',waiting?'MISCHIA · PREMI DUELLA':'MISCHIA · SPINGI!!');
   $('scrumCallout').hidden=ready||s.feed===1;$('scrumTiming').hidden=!ready;
   $('scrumNeedle').style.left=(s.needle*100)+'%';
   const feedback=s.lastAction&&s.elapsed-s.lastActionAt<.48?(s.lastAction==='win'?'SPINTA!':'FUORI TEMPO'):'MIRA '+Math.round(s.needle*100)+'%';
   setText('scrumMeterValue',s.feed===1?'AUTOMATICA':feedback);
-  setText('scrumInstructions',s.feed===0?(waiting?'PREMI SPINGI / K / SPAZIO PER INIZIARE':'JOYSTICK: USCITA · PREMI B / SPAZIO NEL VERDE'):'DIFESA AUTOMATICA · NESSUN COMANDO RICHIESTO');
-  setText('scrumSide',s.feed===1?'INTRODUCE L’IRLANDA · PREPARATI A DIFENDERE':s.side<0?'← USCITA A SINISTRA':'USCITA A DESTRA →');
+  setText('scrumInstructions',s.feed===0?(waiting?'PREMI DUELLA / B / K / SPAZIO PER INIZIARE':'JOYSTICK: USCITA · PREMI B / SPAZIO NEL VERDE'):'DIFESA AUTOMATICA · NESSUN COMANDO RICHIESTO');
+  setText('scrumSide',s.feed===1?'INTRODUCE '+match.teams[1].name+' · PREPARATI A DIFENDERE':s.side<0?'← USCITA A SINISTRA':'USCITA A DESTRA →');
   $('scrumBalance').style.transform='scaleX('+s.balance+')';
 }
 function updateKick(){
@@ -218,4 +252,4 @@ function frame(now){
   renderer.draw(match,dt,['live','scrum'].includes(match.phase)&&!paused?clamp(accumulator/STEP,0,1):1);
   frameId=requestAnimationFrame(frame);
 }
-match.events=[];updateHud();frameId=requestAnimationFrame(frame);
+match.events=[];updateHud();previewTeams();frameId=requestAnimationFrame(frame);

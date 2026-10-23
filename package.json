@@ -7,7 +7,8 @@
     "start": "node tools/serve.mjs",
     "test": "node tools/test.mjs",
     "test:ui": "node --test tests/ui.test.mjs",
-    "test:render": "node tests/render-check.mjs && node tests/conversion-render-check.mjs"
+    "test:render": "node tests/render-check.mjs && node tests/conversion-render-check.mjs && node tests/nations-render-check.mjs",
+    "check:nations": "node tools/check-nations.mjs"
   },
   "engines": {
     "node": ">=20"

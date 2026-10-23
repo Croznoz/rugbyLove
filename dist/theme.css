@@ -53,3 +53,13 @@ html,body{background:#eeeadd;background-image:none}
 .icon-button{background:#f6f0df;border:1px solid #92a591;box-shadow:none}
 @media(max-width:700px){.menu-layer{background:linear-gradient(180deg,transparent,#2d484b33 35%,#2d484bd9 80%),url('assets/club-opening-2026-10.png') 35% center/cover no-repeat}.intro-card h1{font-size:28px}}
 @media(max-height:560px) and (orientation:landscape){.intro-card h1{font-size:22px}.menu-layer{background:linear-gradient(90deg,transparent,#2d484b99),url('assets/club-opening-2026-10.png') center/cover no-repeat}}
+
+/* National selection uses the existing console palette and native touch controls. */
+.nation-select{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;border-block:1px solid #8da79955;padding:12px 0}
+.nation-select label{min-width:0;display:flex;flex-direction:column;gap:7px}
+.nation-select select{width:100%;min-height:44px;font-size:8px;padding:8px 4px;background:#45665f}
+.nation-traits{font-family:ui-monospace,monospace;font-size:10px;line-height:1.5;color:#dce2ce;min-height:45px}
+.intro-card .nation-note{font-family:ui-monospace,monospace;font-size:10px;line-height:1.5;margin:8px 0}
+.team-chip{font-size:8px;width:30px}.team{min-width:0}.team small{line-height:1.5}
+@media(max-width:700px){.team{font-size:9px}.nation-select{gap:8px}.intro-card{max-width:100%}}
+@media(max-height:560px) and (orientation:landscape){.nation-select{display:grid}.nation-traits{min-height:0}.intro-card .nation-note{display:none}}

@@ -1,3 +1,4 @@
+import {teamPair,matchKits} from './teams.mjs';
 export const FIELD={width:720,height:1320,left:51,right:669,top:127.5,bottom:1192.5,inGoalTop:45,inGoalBottom:1275};
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -21,12 +22,13 @@ const RECEIVING_FORMATION=Object.freeze([
 ]);
 export class Match{
   constructor(){this.events=[];this.reset({});this.state='menu';this.phase='live';}
-  reset({seconds=60,difficulty='normal',scrums=false}={}){
+  reset({seconds=60,difficulty='normal',scrums=false,home='ita',away='irl'}={}){
+    this.teams=teamPair(home,away);this.kits=matchKits(this.teams);
     this.scrumsEnabled=!!scrums;this.scrum=null;this.seconds=seconds;this.difficulty=difficulty;this.aiSpeed={easy:70,normal:80,hard:88}[difficulty]||80;
     this.score=[0,0];this.half=1;this.time=seconds;this.elapsed=0;this.attackDir=-1;this.possession=0;this.tackles=0;this.state='playing';this.phase='kickoff';this.phaseTime=2.1;this.events=[];this.ball=null;this.particles=[];this.perfectImpact=null;this.cpuThink=0;this.passCooldown=0;this.guard=1;this.selected=0;
     this.passSelection=null;this.kickAim=null;this.loopRun=null;this.attackPlan=null;this.defensePlan=null;this.conversion=null;this.contact=null;this.cpuOffloadAt=-10;this.defenseGesture=null;this.aim={x:0,y:0};
     this.stats={tries:[0,0],conversions:[0,0],conversionAttempts:[0,0],passes:[0,0],offloads:[0,0],scrums:[0,0],tackles:[0,0],breaks:[0,0],kicks:[0,0],possession:[0,0]};
-    this.players=Array.from({length:14},(_,id)=>({id,team:id<7?0:1,slot:id%7,number:NUMBERS[id%7],profile:PROFILES[ROLE_PROFILES[id%7]],x:0,y:0,px:0,py:0,vx:0,vy:0,down:0,jump:0,jumpQuality:0,energy:PROFILES[ROLE_PROFILES[id%7]].stamina,energyWait:0,runLoad:0,moveSpeed:0,exhausted:false,burst:0,cd:0,charge:0,chargeX:0,chargeY:0,dive:0,diveX:0,diveY:0,kickAnim:0,kickCd:0,dominantReadyAt:0,dominantAttempt:false,brace:false,evade:0,tackleWind:0,tackleX:0,tackleY:0,anim:0,facing:0}));
+    this.players=Array.from({length:14},(_,id)=>({id,team:id<7?0:1,slot:id%7,number:NUMBERS[id%7],nation:this.teams[id<7?0:1].stats,kit:this.kits[id<7?0:1],profile:PROFILES[ROLE_PROFILES[id%7]],x:0,y:0,px:0,py:0,vx:0,vy:0,down:0,jump:0,jumpQuality:0,energy:PROFILES[ROLE_PROFILES[id%7]].stamina,energyWait:0,runLoad:0,moveSpeed:0,exhausted:false,burst:0,cd:0,charge:0,chargeX:0,chargeY:0,dive:0,diveX:0,diveY:0,kickAnim:0,kickCd:0,dominantReadyAt:0,dominantAttempt:false,brace:false,evade:0,tackleWind:0,tackleX:0,tackleY:0,anim:0,facing:0}));
     this.lineup(0);this.emit('kickoff','SI GIOCA.','CALCIO D’INIZIO');
   }
   spendEnergy(p,amount){
@@ -45,7 +47,7 @@ export class Match{
       if(running&&!sprint&&p.runLoad>2){
         this.spendEnergy(p,dt*(.8+2.2*clamp((p.runLoad-2)/8,0,1)));
       }else if(!running&&!sprint&&p.energyWait===0&&p.charge<=0&&p.dive<=0&&p.burst<=0&&p.evade<=0&&p.kickAnim<=0){
-        p.energy=clamp(p.energy+dt*(moving?4:12),0,p.profile.stamina);
+        p.energy=clamp(p.energy+dt*(moving?4:12)*p.nation.recovery,0,p.profile.stamina);
       }
     }
   }
@@ -228,7 +230,7 @@ export class Match{
       p.commitY=clamp(passer.y+passer.vy*.18,FIELD.top-16,FIELD.bottom+16);
     }
     this.defensePlan=null;
-    const c=this.carrier;c.charge=0;this.ball={kind:'pass',oneTwo,x:c.x,y:c.y,sx:c.x,sy:c.y,tx:to.x,ty:to.y,to:to.id,from:c.id,t:0,duration:clamp(distance(c,to)/430,.2,.52),team:c.team};for(const p of this.players)p.tackleWind=0;this.ball.runX=to.vx;this.ball.runY=Math.abs(to.vy)>8?to.vy:this.dir(c.team)*65;this.passCooldown=.18;this.emit('pass');return true;
+    const c=this.carrier;c.charge=0;this.ball={kind:'pass',oneTwo,x:c.x,y:c.y,sx:c.x,sy:c.y,tx:to.x,ty:to.y,to:to.id,from:c.id,t:0,duration:clamp(distance(c,to)/(430*c.nation.pass),.2,.52),team:c.team};for(const p of this.players)p.tackleWind=0;this.ball.runX=to.vx;this.ball.runY=Math.abs(to.vy)>8?to.vy:this.dir(c.team)*65;this.passCooldown=.18;this.emit('pass');return true;
   }
   canChase(p,b=this.ball){
     return b.kind==='fumble'||p.team!==b.team||b.eligible.includes(p.id)||(p.y-this.players[b.from].y)*this.dir(b.team)<=0;
@@ -257,7 +259,7 @@ export class Match{
     return this.kick({x:a.x,y:a.y},a.power,a.kickoff);
   }
   kickTarget(aim,power=.5){
-    const p=this.carrier,kick=p.profile.kick;
+    const p=this.carrier,kick=p.profile.kick*p.nation.kick;
     if(typeof aim==='number')return {tx:clamp(p.x+clamp(aim,-1,1)*150*kick,FIELD.left+12,FIELD.right-12),ty:clamp(p.y+this.dir(p.team)*252*kick,FIELD.top-12,FIELD.bottom+12)};
     const length=Math.hypot(aim.x,aim.y)||1,range=(aim.kickoff?110+clamp(power,0,1)*200:power<=.32?70+clamp(power,0,.32)*120:110+clamp(power,0,1)*200)*(FIELD.height/1100)*kick;
     const tx=clamp(p.x+aim.x/length*range,FIELD.left+12,FIELD.right-12);
@@ -282,7 +284,7 @@ export class Match{
   recoverKick(p){
     const previous=this.ball.team;for(const q of this.players)q.tackleWind=0;this.ball=null;this.carrierId=p.id;this.possession=p.team;if(p.team!==previous)this.tackles=0;
     this.selected=p.team===0?p.id:this.nearest(0,p).id;this.guard=.75;this.passCooldown=.12;p.charge=0;p.dive=0;
-    this.emit('recovery',p.team===0?'PALLA RECUPERATA!':'PALLA ALL’IRLANDA',p.team===0?'RIPARTI!':'TORNA IN DIFESA');
+    this.emit('recovery',p.team===0?'PALLA RECUPERATA!':'PALLA · '+this.teams[1].name,p.team===0?'RIPARTI!':'TORNA IN DIFESA');
   }
   scatterKickBounce(b){
     // One random seed per ball; sample only on impact, never per frame.
@@ -332,7 +334,7 @@ export class Match{
     this.restart.receiver=this.nearest(team,this.restart).id;
     this.ball=null;this.contact=null;this.cancelKick();this.loopRun=null;this.tackles=0;
     this.possession=team;this.phase='ruck';this.phaseTime=.42;
-    this.emit('out','PALLA FUORI','RIMESSA AUTOMATICA · '+(team===0?'ITALIA':'IRLANDA'));
+    this.emit('out','PALLA FUORI','RIMESSA AUTOMATICA · '+this.teams[team].name);
   }
 
   bestDefender(){
@@ -411,19 +413,23 @@ export class Match{
     if(this.loose){if(p.energy>=12){this.spendEnergy(p,12);p.burst=.4;p.cd=.6;this.emit('sprint');}return;}
     if(this.ball)return;
     if(this.possession===0){
-      if(Math.abs(input.x||0)>.55&&Math.abs(input.x)>Math.abs(input.y||0)*1.25){
-        if(p.energy<18)return;
-        p.evade=.22;p.chargeX=Math.sign(input.x);p.chargeY=this.dir(0)*.28;
-        p.charge=0;p.burst=0;p.cd=.85;this.spendEnergy(p,18);this.emit('sidestep');return;
-      }
-      if(p.energy<36){this.emit('hint','RIPRENDI FIATO','SERVE ENERGIA PER SFONDARE');return;}
-      let dx=input.x||0,dy=input.y||0;
-      if(Math.hypot(dx,dy)<.15){dx=p.vx;dy=p.vy;if(Math.hypot(dx,dy)<6){dx=0;dy=this.dir(p.team);}}
-      const len=Math.hypot(dx,dy)||1;p.chargeX=dx/len;p.chargeY=dy/len;p.charge=(.28+.20*clamp((p.energy-36)/30,0,1))*p.profile.charge;p.burst=.4;this.spendEnergy(p,36);p.cd=1.25;this.emit('charge');
+      this.attackAction(p,input);
     }else{
       if(p.energy<12){this.emit('hint','RIPRENDI FIATO','IL PLACCAGGIO A CONTATTO RESTA ATTIVO');return;}p.dominantAttempt=p.profile===PROFILES.powerful&&p.energy>=35&&this.elapsed>=p.dominantReadyAt;this.spendEnergy(p,12);p.cd=.9;const c=this.carrier,len=distance(p,c)||1;
-      p.diveX=(c.x-p.x)/len;p.diveY=(c.y-p.y)/len;p.dive=.22*p.profile.tackle;this.emit('dive');
+      p.diveX=(c.x-p.x)/len;p.diveY=(c.y-p.y)/len;p.dive=.22*p.profile.tackle*p.nation.tackle;this.emit('dive');
     }
+  }
+  attackAction(p,input){
+    if(p.cd>0||p.down>0||p.charge>0||p.evade>0)return false;
+      if(Math.abs(input.x||0)>.55&&Math.abs(input.x)>Math.abs(input.y||0)*1.25){
+        if(p.energy<18)return false;
+        p.evade=.22;p.chargeX=Math.sign(input.x);p.chargeY=this.dir(p.team)*.28;
+        p.charge=0;p.burst=0;p.cd=.85;this.spendEnergy(p,18);this.emit('sidestep');return true;
+      }
+      if(p.energy<36){if(p.team===0)this.emit('hint','RIPRENDI FIATO','SERVE ENERGIA PER SFONDARE');return false;}
+      let dx=input.x||0,dy=input.y||0;
+      if(Math.hypot(dx,dy)<.15){dx=p.vx;dy=p.vy;if(Math.hypot(dx,dy)<6){dx=0;dy=this.dir(p.team);}}
+      const len=Math.hypot(dx,dy)||1;p.chargeX=dx/len;p.chargeY=dy/len;p.charge=(.28+.20*clamp((p.energy-36)/30,0,1))*p.profile.charge*p.nation.charge;p.burst=.4;this.spendEnergy(p,36);p.cd=1.25;this.emit('charge');return true;
   }
   tackle(defender,manual=false,finalize=false){
     if(this.phase!=='live'||this.ball||this.guard>0)return;
@@ -457,7 +463,7 @@ export class Match{
     this.scatter(c.x,c.y,'#e4d9a6',10);this.emit('tackle',manual?'BEL PLACCAGGIO!':'PLACCAGGIO',this.tackles+' / 3');
     this.restart={team:c.team,x:c.x,y:clamp(c.y,FIELD.top+32,FIELD.bottom-32)};
     if(this.tackles>=3&&this.scrumsEnabled){this.beginScrum(1-c.team);return;}
-    if(this.tackles>=3){this.restart.team=1-c.team;this.tackles=0;this.emit('turnover','CAMBIO POSSESSO',this.restart.team===0?'PALLA ALL’ITALIA':'PALLA ALL’IRLANDA');}
+    if(this.tackles>=3){this.restart.team=1-c.team;this.tackles=0;this.emit('turnover','CAMBIO POSSESSO','PALLA · '+this.teams[this.restart.team].name);}
     this.phase='ruck';this.phaseTime=.42;this.restart.receiver=this.nearest(this.restart.team,this.restart,c.id).id;
   }
   perfectTackleReady(){
@@ -510,20 +516,20 @@ export class Match{
     this.cancelKick();
     const c=this.carrier,x=clamp(c.x,120,360),y=clamp(c.y,175,705);
     this.phase='scrum';this.ball=null;this.contact=null;this.tackles=0;
-    this.scrum={x,y,feed,started:false,elapsed:0,duration:7,balance:feed===0?.68:.32,side:1,needle:0,sweep:0,speed:.72,lastDuelAt:-1,lastAction:'',lastActionAt:-1};
+    this.scrum={x,y,feed,started:false,elapsed:0,intro:.4,duration:4.4,balance:feed===0?.68:.32,side:1,needle:0,sweep:0,speed:.72,lastDuelAt:-1,lastAction:'',lastActionAt:-1};
     for(const p of this.players){p.down=p.charge=p.dive=p.burst=0;p.vx=p.vy=0;p.px=p.x;p.py=p.y;}
     this.emit('scrumStart');
   }
   stepScrum(dt,input){
     const s=this.scrum,waiting=s.feed===0&&!s.started;
     if(!waiting)s.elapsed+=dt;
-    const duelElapsed=Math.max(0,s.elapsed-3);
+    const duelElapsed=Math.max(0,s.elapsed-s.intro);
     s.speed=.72+duelElapsed*.08;
     if(duelElapsed>0)s.sweep+=s.speed*dt;
     s.needle=1-Math.abs(1-s.sweep%2);
     if(s.feed===0&&Math.abs(input.x||0)>.25)s.side=Math.sign(input.x);
     const cpu={easy:.08,normal:.10,hard:.12}[this.difficulty]||.1;
-    if(!waiting)s.balance=clamp(s.balance-cpu*(2/s.duration)*dt,.02,.98);
+    if(!waiting)s.balance=clamp(s.balance-cpu*this.teams[1].stats.scrum*(2/s.duration)*dt,.02,.98);
     const displacement=(s.balance-.5)*24;
     for(const p of this.players){
       p.px=p.x;p.py=p.y;const d=this.dir(p.team),pack=p.slot<3;
@@ -545,7 +551,7 @@ export class Match{
       this.ball={kind:'pass',scrumExit:true,side,x:from.x,y:from.y,sx:from.x,sy:from.y,
         tx:receiver.x,ty:receiver.y,to:receiver.id,from:from.id,t:0,duration:.42,
         team,runX:0,runY:0};
-      this.emit('scrumEnd',team===0?'MISCHIA VINTA!':'PALLA ALL’IRLANDA',team===0?(side<0?'ESCI A SINISTRA':'ESCI A DESTRA'):'TORNA IN DIFESA');
+      this.emit('scrumEnd',team===0?'MISCHIA VINTA!':'PALLA · '+this.teams[1].name,team===0?(side<0?'ESCI A SINISTRA':'ESCI A DESTRA'):'TORNA IN DIFESA');
       if(this.time<=0)this.endHalf();
     }
   }
@@ -553,10 +559,10 @@ export class Match{
     const s=this.scrum;
     if(this.state!=='playing'||this.phase!=='scrum'||!s||s.feed!==0)return false;
     if(!s.started){s.started=true;return true;}
-    if(s.elapsed<3||s.elapsed-s.lastDuelAt<.28)return false;
+    if(s.elapsed<s.intro||s.elapsed-s.lastDuelAt<.28)return false;
     s.lastDuelAt=s.elapsed;
     const success=s.needle>=.38&&s.needle<=.62,pack=this.players.slice(0,3);
-    const strength=pack.reduce((sum,p)=>sum+clamp(p.energy/p.profile.stamina,0,1),0)/3;
+    const strength=pack.reduce((sum,p)=>sum+clamp(p.energy/p.profile.stamina,0,1),0)/3*this.teams[0].stats.scrum;
     s.balance=clamp(s.balance+(success?.22:-.1)*strength,.02,.98);
     for(const p of pack)this.spendEnergy(p,success?4:2);
     s.lastAction=success?'win':'miss';s.lastActionAt=s.elapsed;
@@ -579,7 +585,7 @@ export class Match{
     if(this.phase!=='live')return;
     this.cancelKick();
     this.trySpot={x:this.carrier.x,team};
-    this.score[team]+=5;this.stats.tries[team]++;this.phase='try';this.phaseTime=2.2;this.nextTeam=1-team;this.tackles=0;this.ball=null;this.scatter(this.carrier.x,this.carrier.y,team===0?'#b9dafa':'#d3edab',36);this.emit('try',team===0?'META ITALIA!':'META IRLANDA!','+5 PUNTI');
+    this.score[team]+=5;this.stats.tries[team]++;this.phase='try';this.phaseTime=2.2;this.nextTeam=1-team;this.tackles=0;this.ball=null;this.scatter(this.carrier.x,this.carrier.y,team===0?'#b9dafa':'#d3edab',36);this.emit('try','META '+this.teams[team].name+'!','+5 PUNTI');
   }
   beginConversion(){
     this.cancelKick();
@@ -708,7 +714,7 @@ export class Match{
       if(p.team===1&&this.canContest(p)&&this.ball.duration-this.ball.t<=.35)this.contest(p);
       let dx=0,dy=0,speed=p.team===0?(p.id===this.selected?78:65):this.aiSpeed;
       if(p.dive>0){dx=p.diveX;dy=p.diveY;speed=210;
-      }else if(p.evade>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;speed=150*p.profile.agility;
+      }else if(p.evade>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;speed=150*p.profile.agility*p.nation.agility;
       }else if(this.ball?.kind==='pass'&&p.id===this.ball.to){
         dx=this.ball.runX;dy=this.ball.runY;const run=Math.hypot(dx,dy)||1;dx/=run;dy/=run;speed=78;
       }else if(p.id===this.selected&&!(this.ball?.kickoff&&!this.ball.landed&&Math.hypot(input.x||0,input.y||0)<.1&&chasers[p.team].indexOf(p)>=0&&chasers[p.team].indexOf(p)<2)){dx=input.x||0;dy=input.y||0;if(p.charge>0&&!this.ball){dx=p.chargeX;dy=p.chargeY;}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}if((this.possession===0||this.loose)&&input.sprint&&!p.exhausted&&p.energy>1&&(dx||dy)){speed*=p.profile.sprint;this.spendEnergy(p,dt*28.8*(1+.25*clamp(p.runLoad/8,0,1)));}if(p.burst>0&&(this.possession===0||this.loose))speed*=1.4;
@@ -772,7 +778,7 @@ export class Match{
     }else if(this.ball){
       const b=this.ball;b.t+=dt;const receiver=this.players[b.to];b.tx=receiver.x;b.ty=receiver.y;const ratio=clamp(b.t/b.duration,0,1);b.x=b.sx+(b.tx-b.sx)*ratio;b.y=b.sy+(b.ty-b.sy)*ratio;
       const intercept=this.players.find(p=>p.team!==b.team&&p.down<=0&&distance(p,b)<10&&ratio>.2&&ratio<.95);
-      if(intercept){this.carrierId=intercept.id;this.possession=intercept.team;this.tackles=0;this.ball=null;this.guard=.6;this.selected=this.possession===0?intercept.id:this.nearest(0,intercept).id;this.emit('turnover','INTERCETTO!',this.possession===0?'PALLA ALL’ITALIA':'PALLA ALL’IRLANDA');}
+      if(intercept){this.carrierId=intercept.id;this.possession=intercept.team;this.tackles=0;this.ball=null;this.guard=.6;this.selected=this.possession===0?intercept.id:this.nearest(0,intercept).id;this.emit('turnover','INTERCETTO!','PALLA · '+this.teams[this.possession].name);}
       else if(ratio>=1){const p=this.players[b.to];this.carrierId=b.to;this.possession=p.team;this.stats.passes[p.team]++;if(b.offload)this.stats.offloads[p.team]++;this.ball=null;this.guard=.6;if(p.team===0)this.selected=p.id;if(b.oneTwo&&p.team===0)this.emit('oneTwo','UNO-DUE!','PALLA VIVA · ATTACCA IL VARCO');}
     }else{
       const c=this.carrier,dir=this.dir(c.team);
@@ -792,7 +798,7 @@ export class Match{
               defender.cd=.5;this.emit('miss');
             }
           }else if(defender.dive<=0&&defender.cd<=0&&gap<29){
-            defender.tackleWind=.18/defender.profile.tackle;defender.tackleX=(c.x-defender.x)/Math.max(1,gap);
+            defender.tackleWind=.18/(defender.profile.tackle*defender.nation.tackle);defender.tackleX=(c.x-defender.x)/Math.max(1,gap);
             defender.tackleY=(c.y-defender.y)/Math.max(1,gap);
           }
         }
@@ -806,6 +812,11 @@ export class Match{
           const vx=target.x-c.x,vy=target.y-c.y,length2=vx*vx+vy*vy;
           const clear=defenders.every(d=>{const t=clamp(((d.x-c.x)*vx+(d.y-c.y)*vy)/Math.max(1,length2),0,1);return Math.hypot(d.x-c.x-t*vx,d.y-c.y-t*vy)>19;});
           if(clear&&this.throwBall(target))this.cpuThink=1.65;
+        }
+        if(!this.ball&&near&&distance(near,c)>26&&distance(near,c)<60&&c.cd<=0){
+          const dodge=c.nation.agility>1&&Math.abs(near.x-c.x)<24;
+          const side=c.x<FIELD.width/2?1:-1;
+          this.attackAction(c,dodge?{x:side,y:0}:{x:0,y:dir});
         }
       }
     }

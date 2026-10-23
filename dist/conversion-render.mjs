@@ -1,3 +1,4 @@
+import {drawBall} from './ball-art.mjs';
 import {FIELD,clamp} from './engine.mjs';
 import {ART,paintStadium} from './art.mjs';
 
@@ -42,7 +43,7 @@ export function drawConversion(renderer,match){
       x=startX+(cx+s.error*gap-startX)*depth;y=startY+(gateY-startY)*depth-altitude*heightScale;
       size=Math.max(2.2,4-depth*1.15);spin=depth*9;
     }
-    c.save();c.translate(x,y);c.rotate(spin);c.fillStyle='#715a3e';c.fillRect(-size-1,-size*.55-1,size*2+2,size*1.1+2);c.fillStyle='#fff3d4';c.fillRect(-size,-size*.55,size*2,size*1.1);c.fillStyle='#a08455';c.fillRect(-.5,-size*.55,1,size*1.1);c.restore();
+    drawBall(c,x,y,size*1.25,spin);
   };
   if(hasShot&&s.flightTime/s.flightDuration>.72){ball();posts();}else{posts();ball();}
   const playerScale=clamp(sh/160,.6,1.8);
