@@ -259,13 +259,13 @@ test('Six Nations selection updates flags and real stat meters for touch and key
  for(const [id,key,value] of [['fra','charge',106],['wal','tackle',106],['sco','tackle',94],['eng','agility',92],['irl','pass',106],['ita','recovery',106]]){
   el('homeNation').value=id;dispatch('homeNation','change');
   assert.equal(el('homeFlag').attrs.src,'assets/flags/'+id+'.svg');
-  assert.equal(el('homeValue'+key).textContent,String(value));
+  assert.equal(el('homeValue'+key).textContent,(value>100?'+':'')+(value-100)+'%');
   assert.equal(el('homeStat'+key).attrs['aria-valuenow'],String(value));
-  assert.ok(parseFloat(el('homeFill'+key).style.width)>80);
+  assert.equal(parseFloat(el('homeFill'+key).style.width),(value-90)*5);
  }
  el('awayNation').value='ita';dispatch('awayNation','change');
  assert.notEqual(el('homeNation').value,el('awayNation').value);
  assert.equal(el('awayFlag').attrs.src,'assets/flags/ita.svg');
- assert.equal(el('awayValuerecovery').textContent,'106');
+ assert.equal(el('awayValuerecovery').textContent,'+6%');
  el('homeNation').value='ita';el('awayNation').value='irl';dispatch('homeNation','change');
 });

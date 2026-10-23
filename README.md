@@ -209,8 +209,8 @@ della probabilità di vittoria umana; in questo campione la CPU non ha segnato.
 
 La schermata iniziale usa il titolo Six Nations, una coppa dorata disegnata in
 SVG e sei bandiere rétro locali. I selettori aggiornano bandiera e sette barre:
-potenza, difesa, agilità, passaggi, calci, mischia e recupero. I numeri sono gli
-indici effettivi dei modificatori nazionali (100 = base, scala 0–110), non voti
-inventati né classifiche delle squadre reali. Restano il font, la palette e i
+potenza, difesa, agilità, passaggi, calci, mischia e recupero. Le barre evidenziano i
+modificatori nazionali su una scala da −10% a +10%, con tacca centrale sulla
+base e percentuali esplicite; non sono voti inventati né classifiche reali. Restano il font, la palette e i
 comandi del gioco. Questa modifica riguarda il menu; la modalità disponibile
 è ancora partita singola, indicata sotto il titolo.

@@ -80,9 +80,16 @@ html,body{background:#eeeadd;background-image:none}
 .nation-stat b{font-size:7px;text-align:right;font-weight:400;color:#f5efdb}
 .nation-meter{height:7px;background:#21383d;position:relative;overflow:hidden}
 .nation-meter:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(10% - 1px),#2d484b calc(10% - 1px),#2d484b 10%);pointer-events:none}
-.nation-meter i{display:block;height:100%;width:90.9%;background:#a5bf91}
+.nation-meter i{display:block;height:100%;width:50%;background:#a5bf91}
 .nation-card .nation-traits{display:block;margin-top:10px;min-height:45px;font-size:9px}
 .intro-card .nation-note{font-size:8px;color:#bfcdb8;margin:8px 0}
 @media(max-width:700px){.intro-card{width:350px;padding:14px}.nation-select{gap:12px}.nation-stat{grid-template-columns:54px minmax(10px,1fr) 22px;font-size:6px}.nation-card>label{font-size:6px}.tournament-heading{gap:14px}.intro-card .tournament-heading h1{font-size:26px}}
 @media(max-width:370px){.nation-select{gap:9px}.nation-stat{grid-template-columns:54px minmax(8px,1fr) 22px;font-size:6px}.nation-identity{gap:8px}.nation-flag{width:42px;height:28px}}
 @media(max-height:560px) and (orientation:landscape){.intro-card{width:390px}.tournament-heading{gap:12px;margin-bottom:8px}.tournament-heading img{width:40px;height:52px}.intro-card .tournament-heading h1{font-size:21px}.intro-card .tournament-heading h1 br{display:block}.nation-stats{gap:5px}}
+
+/* Zoom on national differences; the central tick is the neutral baseline. */
+.nation-meter{height:9px}
+.nation-meter:before{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:#f5efdb;z-index:1}
+.nation-stat{grid-template-columns:58px minmax(12px,1fr) 28px}
+.nation-stat b{font-size:7px}
+@media(max-width:700px){.nation-stat{grid-template-columns:54px minmax(8px,1fr) 27px}}

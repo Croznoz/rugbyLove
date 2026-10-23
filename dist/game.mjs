@@ -131,8 +131,8 @@ function previewTeams(changed){
       const value=Math.round(multiplier*100),id=side+'Stat'+key;
       $(id).setAttribute('aria-valuenow',String(value));
       $(id).setAttribute('aria-valuetext',value+' · base 100');
-      $(side+'Value'+key).textContent=String(value);
-      $(side+'Fill'+key).style.width=(value/110*100)+'%';
+      $(side+'Value'+key).textContent=(value>100?'+':'')+(value-100)+'%';
+      $(side+'Fill'+key).style.width=((value-90)/20*100)+'%';
       $(side+'Fill'+key).style.background=value>100?'#e8bc86':value<100?'#b7826b':'#a5bf91';
     }
   }
