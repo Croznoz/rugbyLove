@@ -63,3 +63,26 @@ html,body{background:#eeeadd;background-image:none}
 .team-chip{font-size:8px;width:30px}.team{min-width:0}.team small{line-height:1.5}
 @media(max-width:700px){.team{font-size:9px}.nation-select{gap:8px}.intro-card{max-width:100%}}
 @media(max-height:560px) and (orientation:landscape){.nation-select{display:grid}.nation-traits{min-height:0}.intro-card .nation-note{display:none}}
+
+/* Six Nations: original pixel flags, golden cup and stat strips. */
+.intro-card{width:390px}
+.tournament-heading{display:flex;gap:18px;align-items:center;margin-bottom:12px}
+.tournament-heading img{width:64px;height:84px;flex:none;image-rendering:pixelated}
+.intro-card .tournament-heading h1{font-size:29px;line-height:1.05;letter-spacing:-1px;margin:5px 0 8px}
+.tournament-format{display:block;font-size:6px;line-height:1.5;color:#dce2ce}
+.nation-select{gap:16px;padding:10px 0;align-items:start}
+.nation-card{min-width:0}.nation-card>label{font-size:7px;display:block;margin-bottom:8px}
+.nation-identity{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.nation-identity b{font-size:12px;font-weight:400;color:#f5efdb}
+.nation-flag{width:48px;height:32px;object-fit:contain;image-rendering:pixelated;border:1px solid #cad2b8;box-shadow:3px 3px 0 #21383d}
+.nation-stats{display:grid;gap:7px;margin-top:12px}
+.nation-stat{display:grid;grid-template-columns:58px minmax(12px,1fr) 23px;gap:4px;align-items:center;font-size:6px;color:#dce2ce}
+.nation-stat b{font-size:7px;text-align:right;font-weight:400;color:#f5efdb}
+.nation-meter{height:7px;background:#21383d;position:relative;overflow:hidden}
+.nation-meter:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(10% - 1px),#2d484b calc(10% - 1px),#2d484b 10%);pointer-events:none}
+.nation-meter i{display:block;height:100%;width:90.9%;background:#a5bf91}
+.nation-card .nation-traits{display:block;margin-top:10px;min-height:45px;font-size:9px}
+.intro-card .nation-note{font-size:8px;color:#bfcdb8;margin:8px 0}
+@media(max-width:700px){.intro-card{width:350px;padding:14px}.nation-select{gap:12px}.nation-stat{grid-template-columns:54px minmax(10px,1fr) 22px;font-size:6px}.nation-card>label{font-size:6px}.tournament-heading{gap:14px}.intro-card .tournament-heading h1{font-size:26px}}
+@media(max-width:370px){.nation-select{gap:9px}.nation-stat{grid-template-columns:54px minmax(8px,1fr) 22px;font-size:6px}.nation-identity{gap:8px}.nation-flag{width:42px;height:28px}}
+@media(max-height:560px) and (orientation:landscape){.intro-card{width:390px}.tournament-heading{gap:12px;margin-bottom:8px}.tournament-heading img{width:40px;height:52px}.intro-card .tournament-heading h1{font-size:21px}.intro-card .tournament-heading h1 br{display:block}.nation-stats{gap:5px}}

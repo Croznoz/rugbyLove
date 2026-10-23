@@ -204,3 +204,13 @@ Nel confronto del 23 ottobre 2026 gli 0–0 sono scesi da 23 a 12 su 30 partite,
 le mete del bot sono passate da 7 a 22. Italia–Irlanda: da 0–0 a 7–0.
 È una verifica automatica del motore, non una prova su smartphone né una stima
 della probabilità di vittoria umana; in questo campione la CPU non ha segnato.
+
+## Menu Six Nations
+
+La schermata iniziale usa il titolo Six Nations, una coppa dorata disegnata in
+SVG e sei bandiere rétro locali. I selettori aggiornano bandiera e sette barre:
+potenza, difesa, agilità, passaggi, calci, mischia e recupero. I numeri sono gli
+indici effettivi dei modificatori nazionali (100 = base, scala 0–110), non voti
+inventati né classifiche delle squadre reali. Restano il font, la palette e i
+comandi del gioco. Questa modifica riguarda il menu; la modalità disponibile
+è ancora partita singola, indicata sotto il titolo.

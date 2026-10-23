@@ -122,6 +122,20 @@ function teamLabels(teams,kits){
 function previewTeams(changed){
   const teams=selectedTeams(changed);
   $('homeTraits').textContent=teams[0].detail;$('awayTraits').textContent=teams[1].detail;
+  for(const [i,side] of ['home','away'].entries()){
+    const team=teams[i];
+    $(side+'Flag').setAttribute('src','assets/flags/'+team.id+'.svg');
+    $(side+'Flag').setAttribute('alt','Bandiera '+team.name);
+    $(side+'Identity').textContent=team.short;
+    for(const [key,multiplier] of Object.entries(team.stats)){
+      const value=Math.round(multiplier*100),id=side+'Stat'+key;
+      $(id).setAttribute('aria-valuenow',String(value));
+      $(id).setAttribute('aria-valuetext',value+' · base 100');
+      $(side+'Value'+key).textContent=String(value);
+      $(side+'Fill'+key).style.width=(value/110*100)+'%';
+      $(side+'Fill'+key).style.background=value>100?'#e8bc86':value<100?'#b7826b':'#a5bf91';
+    }
+  }
   teamLabels(teams,matchKits(teams));
 }
 $('homeNation').addEventListener('change',()=>previewTeams('home'));
