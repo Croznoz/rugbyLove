@@ -119,3 +119,5 @@ html,body{background:#eeeadd;background-image:none}
 .tournament-results #roundTitle{margin:10px 0}
 .tournament-results #roundResults{margin:8px 0;line-height:1.4}
 #tournamentInfo,#saveStatus{display:block}
+
+.arcade-entry{display:grid;gap:7px;padding:15px;margin:12px 0;border:2px solid #475d50;background:#e2c28c;color:#172c32;text-decoration:none;text-align:left}.arcade-entry b{font-size:11px;font-weight:400}.arcade-entry span{font-family:system-ui,sans-serif;font-size:12px}.arcade-entry:focus-visible{outline:3px solid #172c32;outline-offset:3px}

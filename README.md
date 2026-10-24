@@ -282,3 +282,21 @@ La mira mostra «DIFESA VICINA» quando un avversario attivo si trova entro 80 u
 dal punto di caduta, altrimenti «SPAZIO»: descrive la posizione attuale,
 non garantisce la ricezione. I suggerimenti ricordano quando sfondare e che lo
 scatto torna disponibile a 25 energia, mentre corsa normale e passaggi restano liberi.
+
+## Corsa alla meta · Arcade
+
+Nuova sezione dal menu, disponibile anche in `arcade.html`: un portatore corre
+in automatico e affronta ondate di difensori. Joystick o WASD/frecce muovono il
+portatore; J/spazio attiva lo scatto (20 energia), K la schivata nella direzione
+scelta (22), L lo sfondamento di un difensore (32). Senza direzione, la schivata
+va verso il centro. L'energia recupera automaticamente e torna piena alla meta.
+Ogni 160 metri una meta aumenta densità, velocità e inseguimento delle ondate,
+con limiti massimi e almeno una corsia libera alla comparsa di ogni fila.
+Un placcaggio termina la corsa; distanza, mete e difensori superati danno punti.
+Record locale sul browser, con funzionamento in sessione se lo storage è negato.
+P/Escape mette in pausa; cambio scheda o perdita di focus sospendono la corsa.
+Motore, controlli e rendering sono separati nei moduli `dist/arcade-*.mjs`.
+
+`npm run test:arcade` verifica collisioni, progressione, comandi touch/tastiera,
+pausa, riprova e storage, con adapter DOM e canvas reale. Salva
+`qa/arcade-field.png`; non sostituisce una prova interattiva su smartphone.

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#172c32"><title>Corsa alla meta — Retro Rugby Club</title><link rel="stylesheet" href="arcade.css"></head>
+<body><main class="arcade-shell">
+<header><a href="./">← CLUB</a><span>RRC / ARCADE</span><button id="pause" aria-label="Pausa" disabled>Ⅱ</button></header>
+<section class="scoreboard" aria-label="Punteggio"><div><small>PUNTI</small><b id="score">0</b></div><div><small>ONDATA</small><b id="level">01</b></div><div><small>RECORD</small><b id="best">0</b></div></section>
+<div class="arena"><canvas id="field" width="420" height="560" aria-label="Campo arcade: evita i difensori con joystick o frecce"></canvas><div class="distance"><span id="progress">META 0 / 160 m</span><span id="tries">0 METE</span></div><div id="message" role="status"></div>
+<section id="overlay" class="overlay"><span class="eyebrow">UN PALLONE. NESSUN LIMITE.</span><h1 id="title">CORSA<br>ALLA <em>META.</em></h1><p id="description">Corri, trova il varco, supera la difesa.<br>Ogni meta alza la sfida.</p><p id="summary" hidden></p><button id="play" class="primary">INIZIA LA CORSA ↗</button><a href="./">TORNA AL CLUB</a><small id="storageNote" hidden>Record disponibile solo in questa sessione.</small></section></div>
+<div class="energy-row"><span>ENERGIA</span><meter id="energy" min="0" max="100" value="100" aria-label="Energia"></meter><span id="energyText">100</span></div>
+<section class="controls" aria-label="Comandi arcade"><div id="joystick" class="joystick" aria-label="Joystick touch"><span id="stick"></span></div><div class="actions"><button id="sprint"><b>ϟ</b>SCATTO<small>J · 20</small></button><button id="dodge"><b>↔</b>SCHIVA<small>K · 22</small></button><button id="charge"><b>↑</b>SFONDA<small>L · 32</small></button></div></section>
+<p class="instructions">Corsa automatica · Joystick / WASD / frecce<br>Schiva nella direzione scelta. Sfonda un difensore.<br>Spazio: scatto · P / Esc: pausa · Un placcaggio termina la corsa.</p>
+</main><script type="module" src="arcade.mjs"></script></body></html>
