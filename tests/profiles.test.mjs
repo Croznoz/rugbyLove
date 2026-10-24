@@ -15,14 +15,14 @@ test('normal running is equal while agile sprint outruns powerful sprint',()=>{
 test('ordinary carriers run 18% slower than free runners on both teams',()=>{
  const home=setup(PROFILES.playmaker);
  for(let i=0;i<90;i++)home.step(1/120,{x:0,y:-1});
- assert.ok(Math.abs(home.carrier.moveSpeed-78*.82)<.1);
+ assert.ok(Math.abs(home.carrier.moveSpeed-78*1.07*.82)<.1);
  const away=new Match();away.reset({difficulty:'hard'});away.lineup(1);away.phase='live';away.guard=999;away.cpuThink=999;
  for(const p of away.players)if(p.id!==away.carrierId&&p.id!==0)p.down=100;
  Object.assign(away.players[0],{x:FIELD.width/2+180,y:FIELD.height/2,vx:0,vy:0});
  for(let i=0;i<90;i++)away.step(1/120,{x:0,y:1});
- assert.ok(Math.abs(away.carrier.moveSpeed-78*.82)<.1);
+ assert.ok(Math.abs(away.carrier.moveSpeed-78*1.07*.82)<.1);
  assert.ok(away.players[0].moveSpeed>away.carrier.moveSpeed);
- assert.ok(away.players[0].moveSpeed>77&&away.players[0].moveSpeed<79);
+ assert.ok(away.players[0].moveSpeed>77*1.07&&away.players[0].moveSpeed<79*1.07);
 });
 test('every profile can pass when exhausted and kick preview remains exact',()=>{
  for(const profile of Object.values(PROFILES)){
@@ -58,9 +58,9 @@ test('playmaker kick has 35 percent more range at every charge level and respect
  }
 });
 
-test('field shrinks five percent, stamina grows ten percent and kick reach grows five percent independently',()=>{
+test('field keeps its width and shrinks another ten percent in length, stamina grows ten percent and kick reach grows five percent independently',()=>{
  const oldField={width:720,height:1320,left:51,right:669,top:127.5,bottom:1192.5,inGoalTop:45,inGoalBottom:1275};
- for(const [key,old] of Object.entries(oldField))assert.ok(Math.abs(FIELD[key]/old-.95)<1e-12);
+ for(const [key,old] of Object.entries(oldField))assert.ok(Math.abs(FIELD[key]/old-(.95*(['width','left','right'].includes(key)?1:.9)))<1e-12);
  assert.equal(PROFILES.playmaker.stamina,110);assert.equal(PROFILES.powerful.stamina,99);assert.equal(PROFILES.agile.stamina,132);
  for(const dir of [-1,1])for(const power of [.25,.5,1]){
   const m=setup(PROFILES.playmaker);m.attackDir=dir;m.carrier.y=FIELD.height/2-dir*80;

@@ -1,7 +1,8 @@
 # rugbyLove
 
 Progetto completo di rugby arcade 7 contro 7, esportato il 21 ottobre 2026.
-Campo attuale di 684 × 1254 unità, ridotto del 5% in larghezza e lunghezza rispetto alla versione precedente.
+Campo attuale di 684 × 1128,6 unità: lunghezza ridotta di un ulteriore 10%, larghezza invariata.
+Velocità di movimento dei giocatori aumentata del 7% per entrambe le squadre e tutti i ruoli.
 Versione sorgente: `624030572eda7c7136c26fde5a3b4c7866d5ba41`.
 
 ## Aprire con Codex

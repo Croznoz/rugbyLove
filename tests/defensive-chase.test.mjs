@@ -36,7 +36,7 @@ test('a rear CPU defender catches an exhausted ball carrier after a charge in ei
 test('recovery pace requires moving toward the carrier, without a held action button',()=>{
   const m=chase();
   for(let i=0;i<60;i++)m.step(1/120,{x:1,y:0});
-  assert.ok(m.controlled.moveSpeed<=78.01);
+  assert.ok(m.controlled.moveSpeed<=78*1.07+.01);
   for(let i=0;i<60;i++)m.step(1/120,{x:0,y:0});
   assert.ok(m.controlled.moveSpeed<.1);
 });

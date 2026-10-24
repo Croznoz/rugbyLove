@@ -1,5 +1,5 @@
 import {teamPair,matchKits} from './teams.mjs';
-export const FIELD={width:684,height:1254,left:48.45,right:635.55,top:121.125,bottom:1132.875,inGoalTop:42.75,inGoalBottom:1211.25};
+export const FIELD={width:684,height:1128.6,left:48.45,right:635.55,top:109.0125,bottom:1019.5875,inGoalTop:38.475,inGoalBottom:1090.125};
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const CARRIER_PACE=.82;
@@ -775,6 +775,7 @@ export class Match{
       // Carrying the ball costs a little pace for both teams. Dedicated dive
       // and sidestep moves keep their own short action speeds.
       if(!this.ball&&p.id===this.carrierId&&p.dive<=0&&p.evade<=0)speed*=CARRIER_PACE;
+      speed*=1.07; // Increase player movement equally for both teams and all roles.
       const norm=Math.hypot(dx,dy);if(norm>1){dx/=norm;dy/=norm;}
       const blend=p.dive>0?1:1-Math.exp(-dt*18);p.vx+=(dx*speed-p.vx)*blend;p.vy+=(dy*speed-p.vy)*blend;
       p.x=clamp(p.x+p.vx*dt,FIELD.left+8,FIELD.right-8);p.y=clamp(p.y+p.vy*dt,FIELD.inGoalTop+8,FIELD.inGoalBottom-8);p.moveSpeed=dt>0?Math.hypot(p.x-p.px,p.y-p.py)/dt:0;p.anim+=Math.hypot(p.vx,p.vy)*dt*.11;if(Math.abs(p.vy)>3)p.facing=Math.sign(p.vy);

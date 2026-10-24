@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Match,distance} from '../dist/engine.mjs';
+import {Match,distance,FIELD} from '../dist/engine.mjs';
 import {NATIONS,teamPair,matchKits} from '../dist/teams.mjs';
 function setup(home,away='eng'){
  const m=new Match();m.reset({home,away});m.phase='live';m.guard=999;m.passCooldown=0;return m;
@@ -33,7 +33,7 @@ test('national strengths change recovery, passes, charge, dodge, tackles and kic
  const passTime=id=>{const m=setup(id),r=m.players[1];r.x=m.carrier.x+140;r.y=m.carrier.y+20;m.throwBall(r);return m.ball.duration;};assert.ok(passTime('irl')<passTime('fra'));
  const dodge=id=>{const m=setup(id),origin={...m.carrier};for(const p of m.players)if(p.id!==0)p.down=10;m.special({x:1,y:0});for(let i=0;i<12;i++)m.step(1/120,{x:1,y:0});return distance(origin,m.carrier);};assert.ok(dodge('sco')>dodge('eng'));
  const tackle=id=>{const m=setup(id);m.lineup(1);m.special();return m.controlled.dive;};assert.ok(tackle('wal')>tackle('sco'));
- const ranges={};for(const n of NATIONS){const m=setup(n.id);m.beginKick({x:0,y:-1});m.updateKickAim(3,{x:0,y:-1});const a=m.kickTarget(m.kickAim,1);ranges[n.id]=distance(m.carrier,{x:a.tx,y:a.ty});m.releaseKick();assert.equal(m.ball.tx,a.tx);assert.equal(m.ball.ty,a.ty);}
+ const ranges={};for(const n of NATIONS){const m=setup(n.id);m.carrier.y=FIELD.bottom-80;m.beginKick({x:0,y:-1});m.updateKickAim(3,{x:0,y:-1});const a=m.kickTarget(m.kickAim,1);ranges[n.id]=distance(m.carrier,{x:a.tx,y:a.ty});m.releaseKick();assert.equal(m.ball.tx,a.tx);assert.equal(m.ball.ty,a.ty);}
  assert.ok(ranges.eng>ranges.wal);
 });
 test('CPU uses the same national attack windows and costs; scrum strength applies to either side',()=>{
@@ -44,7 +44,7 @@ test('CPU uses the same national attack windows and costs; scrum strength applie
 test('each nation can score against every opponent on hard; match events use selected names',()=>{
  for(const home of NATIONS)for(const away of NATIONS){if(home===away)continue;
   const m=setup(home.id,away.id);m.difficulty='hard';m.aiSpeed=88;
-  m.carrier.y=129;for(const p of m.players.slice(7))p.y=700;
+  m.carrier.y=FIELD.top+8;for(const p of m.players.slice(7))p.y=700;
   for(let i=0;i<30&&m.phase==='live';i++)m.step(1/120,{x:0,y:-1});
   assert.equal(m.score[0],5);assert.ok(m.events.some(e=>e.text==='META '+home.name+'!'));
  }
