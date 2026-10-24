@@ -328,3 +328,6 @@ il record resta disponibile in sessione e compare un avviso.
 `npm run test:kicks` verifica progressione, traiettoria/punteggio, vento,
 comandi touch/tastiera, pausa, record e riprova. Genera quattro immagini
 `qa/kicks-*.png`. Test con adapter DOM e canvas: non sono una prova su telefono.
+
+I due minigiochi si avviano dalla sezione «Minigiochi Arcade» subito sotto il
+logo nella pagina iniziale, sopra il campo e fuori dal menu scorrevole.
