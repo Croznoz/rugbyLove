@@ -13,14 +13,14 @@ test('arcade tackle ends the run, dodge evades and charge breaks exactly one def
  }
 });
 test('arcade ordinary running stays available at zero energy and actions respect cooldowns',()=>{
- const r=live();r.energy=0;assert.equal(r.action('sprint'),false);advance(r,1);assert.ok(r.distance>139);assert.ok(r.energy>9);
+ const r=live();r.energy=0;assert.equal(r.action('sprint'),false);advance(r,1);assert.ok(Math.abs(r.distance-175)<1e-8);assert.ok(r.energy>9);
  r.energy=100;assert.ok(r.action('sprint'));assert.equal(r.action('sprint'),false);const before=r.distance;advance(r,.5);assert.ok(r.distance-before>100);
  r.state='paused';const distance=r.distance,energy=r.energy;advance(r,1);assert.equal(r.distance,distance);assert.equal(r.energy,energy);assert.equal(r.action('charge'),false);
 });
 test('arcade metas restore energy and increase waves with a bounded open lane',()=>{
  const r=live();const initial=r.pace;r.distance=1599;r.energy=1;r.enemies=[{x:50,y:30}];r.step(1/120);
  assert.equal(r.tries,1);assert.equal(r.energy,100);assert.equal(r.enemies.length,0);assert.ok(r.pace>initial);assert.ok(r.score>=260);
- for(const level of [1,3,7,100]){r.tries=level-1;r.enemies=[];r.spawn();assert.equal(r.enemies.length,Math.min(5,2+Math.floor((level-1)/2)));assert.ok(new Set(r.enemies.map(e=>e.home)).size<6);assert.ok(r.pace<=230);}
+ for(const level of [1,3,7,100]){r.tries=level-1;r.enemies=[];r.spawn();assert.equal(r.enemies.length,Math.min(5,3+Math.floor((level-1)/2)));assert.ok(new Set(r.enemies.map(e=>e.home)).size<6);assert.ok(r.pace<=230);}
  r.start();assert.equal(r.score,0);assert.equal(r.level,1);assert.equal(r.enemies.length,0);
 });
 test('arcade counts passed defenders once and removes distant enemies',()=>{

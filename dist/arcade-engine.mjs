@@ -3,12 +3,12 @@ export class ArcadeRun {
   constructor(random=Math.random){this.random=random;this.reset();}
   reset(){
     this.state='ready';this.x=210;this.y=410;this.distance=0;this.tries=0;this.passed=0;this.energy=100;
-    this.enemies=[];this.spawnIn=1.6;this.sprint=0;this.dodge=0;this.charge=0;this.dodgeDir=1;
+    this.enemies=[];this.spawnIn=1.0;this.sprint=0;this.dodge=0;this.charge=0;this.dodgeDir=1;
     this.cooldowns={sprint:0,dodge:0,charge:0};this.flash=0;this.time=0;
   }
   get level(){return this.tries+1;}
   get score(){return Math.floor(this.distance/10)+this.tries*100+this.passed*10;}
-  get pace(){return 140+Math.min(90,(this.level-1)*9);}
+  get pace(){return 175+Math.min(55,(this.level-1)*9);}
   start(){this.reset();this.state='playing';}
   action(kind,axis=0){
     const cost={sprint:20,dodge:22,charge:32}[kind];
@@ -24,7 +24,7 @@ export class ArcadeRun {
     // Every row has an open lane; early levels leave several lanes open.
     const candidates=lanes.map((x,i)=>({x,i})).filter(p=>p.i!==gap);
     for(let i=candidates.length-1;i>0;i--){const j=Math.floor(this.random()*(i+1));[candidates[i],candidates[j]]=[candidates[j],candidates[i]];}
-    const count=Math.min(5,2+Math.floor((this.level-1)/2));
+    const count=Math.min(5,3+Math.floor((this.level-1)/2));
     for(const p of candidates.slice(0,count))this.enemies.push({x:p.x,y:-35,home:p.x,passed:false,down:false});
   }
   step(dt,input={}){
@@ -38,14 +38,14 @@ export class ArcadeRun {
     const speed=this.pace*(this.sprint>0?1.55:1),travel=speed*dt;
     this.distance+=travel;
     if(this.distance>=(this.tries+1)*1600){
-      this.tries++;this.energy=100;this.flash=1.5;this.enemies=[];this.spawnIn=1.5;
+      this.tries++;this.energy=100;this.flash=1.5;this.enemies=[];this.spawnIn=1.2;
     }
     this.spawnIn-=dt;
-    if(this.spawnIn<=0){this.spawn();this.spawnIn=Math.max(1.1,2.15-(this.level-1)*.1);}
+    if(this.spawnIn<=0){this.spawn();this.spawnIn=Math.max(1.1,1.7-(this.level-1)*.1);}
     for(const e of this.enemies){
       e.y+=travel;
       // Defenders commit early and stop steering near contact, leaving readable gaps.
-      if(!e.down&&e.y>70&&e.y<this.y-100){const chase=Math.min(32,8+this.level*3);e.x=clamp(e.x+Math.sign(this.x-e.x)*chase*dt,e.home-20,e.home+20);}
+      if(!e.down&&e.y>70&&e.y<this.y-100){const chase=Math.min(32,14+this.level*3);e.x=clamp(e.x+Math.sign(this.x-e.x)*chase*dt,e.home-20,e.home+20);}
       if(!e.down&&Math.hypot(e.x-this.x,e.y-this.y)<23){
         if(this.dodge>0)continue;
         if(this.charge>0){e.down=true;this.charge=0;this.passed++;e.passed=true;}

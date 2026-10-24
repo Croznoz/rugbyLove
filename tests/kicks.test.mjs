@@ -23,6 +23,7 @@ test('short kicks and wide kicks cost one life, and the third error ends the gam
 });
 test('distance, position, wind and timing grow with bounded, achievable difficulty',()=>{
  const g=live(),firstTolerance=g.tolerance;let lastDepth=0;
+ assert.equal(g.position.z,28);assert.equal(g.position.x,6);assert.equal(g.meterSpeed,.82);assert.ok(firstTolerance<.12);
  for(let n=0;n<120;n++){
   assert.ok(g.position.z>=lastDepth);lastDepth=g.position.z;
   assert.ok(g.distance<57);assert.ok(Math.abs(g.position.x)<=23);assert.ok(Math.abs(g.wind)<=3.2);assert.ok(g.minPower<.87);

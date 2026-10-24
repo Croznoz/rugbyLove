@@ -9,8 +9,8 @@ export class KickChallenge {
   get level(){return this.goals+1;}
   get distance(){return Math.hypot(this.position.x,this.position.z);}
   get minPower(){return .35+this.distance*.009;}
-  get tolerance(){return Math.max(.055,.15-(this.shotLevel-1)*.006-Math.abs(this.position.x)*.001);}
-  get meterSpeed(){return Math.min(1.45,.62+(this.shotLevel-1)*.045);}
+  get tolerance(){return Math.max(.055,.12-(this.shotLevel-1)*.006-Math.abs(this.position.x)*.001);}
+  get meterSpeed(){return Math.min(1.45,.82+(this.shotLevel-1)*.045);}
   get green(){
     // The green interval exactly matches the horizontal scoring window, including wind.
     const centre=.5-(this.aim+this.wind)*this.tolerance/2.8;
@@ -19,8 +19,8 @@ export class KickChallenge {
   start(){this.reset();this.state='playing';}
   prepare(){
     this.shotLevel=this.level;
-    const spread=Math.min(23,(this.level-1)*2.7),sides=[0,-.65,.8,-1,.5,1,-.8];
-    this.position={x:sides[this.attempt%sides.length]*spread,z:Math.min(52,18+(this.level-1)*2.4)};
+    const spread=Math.min(23,8+(this.level-1)*2.7),sides=[.75,-.65,.8,-1,.5,1,-.8];
+    this.position={x:sides[this.attempt%sides.length]*spread,z:Math.min(52,28+(this.level-1)*2.4)};
     this.wind=this.level<5?0:Math.sin((this.attempt+1)*2.1)*Math.min(3.2,.65+(this.level-5)*.22);
     this.stage='power';this.aim=0;this.power=0;this.accuracy=0;this.powerLocked=null;this.accuracyLocked=null;
     this.elapsed=0;this.sweep=0;this.flightTime=0;this.flightDuration=1.65;this.result=null;

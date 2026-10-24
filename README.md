@@ -306,7 +306,7 @@ pausa, riprova e storage, con adapter DOM e canvas reale. Salva
 
 Dal menu o da `kicks.html`: gara di piazzati con tre errori disponibili e record
 locale separato da Corsa alla meta. Ogni centro aumenta il livello: distanza
-in profondità da 18 a 52 metri, posizioni alternate fino a 23 metri sui lati,
+in profondità da 28 a 52 metri, posizioni alternate fino a 23 metri sui lati,
 indicatori più veloci e finestra di precisione più stretta. Dal livello 5 il vento
 laterale sposta il pallone; distanza totale, posizione e deviazione sono visibili.
 I parametri hanno limiti massimi: ogni tiro resta tecnicamente realizzabile.
@@ -321,7 +321,7 @@ usato per assegnare il centro. Il record si aggiorna dopo ogni tiro risolto.
 P/Escape, cambio scheda e perdita di focus sospendono indicatori e volo.
 
 Punti per centri, livello, distanza e serie consecutive, con bonus per il centro
-perfetto. Tre errori terminano la gara; RIPROVA riparte dal centro a 18 metri.
+perfetto. Tre errori terminano la gara; RIPROVA riparte da 28 metri in profondità e 6 metri a destra.
 La gara funziona senza dipendenze e senza storage; quando il salvataggio è negato,
 il record resta disponibile in sessione e compare un avviso.
 
@@ -331,3 +331,13 @@ comandi touch/tastiera, pausa, record e riprova. Genera quattro immagini
 
 I due minigiochi si avviano dalla sezione «Minigiochi Arcade» subito sotto il
 logo nella pagina iniziale, sopra il campo e fuori dal menu scorrevole.
+
+
+Difficoltà iniziale Arcade aumentata: Corsa alla meta parte con 3 difensori per
+fila, ritmo 175 unità/s (prima 140), ondate ogni 1,7 secondi (prima 2,15) e
+inseguimento più pronto. Il primo gruppo arriva dopo 1 secondo. Restano almeno
+una corsia libera per fila alla comparsa e i limiti finali di 5 difensori e 230 unità/s.
+Sfida di calci parte da circa 29 metri di distanza totale, già angolata; indicatore
+iniziale da 0,62 a 0,82 e finestra base di precisione da 0,15 a 0,12 prima della
+penalità per l'angolo. Restano tre errori, progressione e vento dal livello 5.
+I record locali già salvati sono conservati.
