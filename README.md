@@ -300,3 +300,31 @@ Motore, controlli e rendering sono separati nei moduli `dist/arcade-*.mjs`.
 `npm run test:arcade` verifica collisioni, progressione, comandi touch/tastiera,
 pausa, riprova e storage, con adapter DOM e canvas reale. Salva
 `qa/arcade-field.png`; non sostituisce una prova interattiva su smartphone.
+
+
+## Sfida di calci · Arcade
+
+Dal menu o da `kicks.html`: gara di piazzati con tre errori disponibili e record
+locale separato da Corsa alla meta. Ogni centro aumenta il livello: distanza
+in profondità da 18 a 52 metri, posizioni alternate fino a 23 metri sui lati,
+indicatori più veloci e finestra di precisione più stretta. Dal livello 5 il vento
+laterale sposta il pallone; distanza totale, posizione e deviazione sono visibili.
+I parametri hanno limiti massimi: ogni tiro resta tecnicamente realizzabile.
+
+Joystick, A/D o frecce sinistra/destra regolano la mira; i due pulsanti laterali
+permettono la stessa regolazione. Premi il pulsante centrale (K, L o spazio)
+per fermare prima la potenza, poi la precisione. La zona verde della precisione
+tiene conto di mira e vento. Dopo il volo, PROSSIMO prepara il tiro successivo.
+La potenza deve raggiungere la zona verde; anche una precisione buona non salva
+un tiro corto. La traiettoria attraversa il piano dei pali nello stesso punto
+usato per assegnare il centro. Il record si aggiorna dopo ogni tiro risolto.
+P/Escape, cambio scheda e perdita di focus sospendono indicatori e volo.
+
+Punti per centri, livello, distanza e serie consecutive, con bonus per il centro
+perfetto. Tre errori terminano la gara; RIPROVA riparte dal centro a 18 metri.
+La gara funziona senza dipendenze e senza storage; quando il salvataggio è negato,
+il record resta disponibile in sessione e compare un avviso.
+
+`npm run test:kicks` verifica progressione, traiettoria/punteggio, vento,
+comandi touch/tastiera, pausa, record e riprova. Genera quattro immagini
+`qa/kicks-*.png`. Test con adapter DOM e canvas: non sono una prova su telefono.

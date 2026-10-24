@@ -9,7 +9,8 @@
     "test:ui": "node --test tests/ui.test.mjs",
     "test:render": "node tests/render-check.mjs && node tests/conversion-render-check.mjs && node tests/nations-render-check.mjs",
     "check:nations": "node tools/check-nations.mjs",
-    "test:arcade": "node --test tests/arcade.test.mjs && node tests/arcade-ui-check.mjs"
+    "test:arcade": "node --test tests/arcade.test.mjs && node tests/arcade-ui-check.mjs",
+    "test:kicks": "node --test tests/kicks.test.mjs && node tests/kicks-ui-check.mjs"
   },
   "engines": {
     "node": ">=20"
